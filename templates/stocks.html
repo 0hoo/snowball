@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h3 class="ui header">
+  <div class="content">
+    Snowball
+    <div class="sub header">{{ stocks|count }}종목</div>
+  </div>
+</h3>
+<form class="ui form" action="{{ url_for('add_stock') }}" method="post">
+    <div class="fields">
+        <div class="eight wide field">
+            <input type="text" name="code" placeholder="종목코드를 입력하세요">
+        </div>
+        <div class="eight wide field">
+            <button class="ui button" type="submit">추가</button>
+        </div>
+    </div>
+</form>
+<div class="ui grid">
+    <div class="sixteen wide column">
+        <table class="ui very basic compact table">
+            <thead>
+            <tr>
+                <th>종목코드</th>
+                <th>
+                    <a href="{{ url_for('stocks') }}?order_by=title&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">종목명</a>
+                    {% if order_by == 'title' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </th>
+                <th>
+                    <a href="{{ url_for('stocks') }}?order_by=current_price&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">현재가</a>
+                    {% if order_by == 'current_price' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </th>
+                <th>
+                    변동
+                </th>
+                <th>
+                    <a href="{{ url_for('stocks', status=status) }}?order_by=per&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">PER</a>
+                    {% if order_by == 'per' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </th>
+                <th>
+                    <a href="{{ url_for('stocks', status=status) }}?order_by=pbr&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">PBR</a>
+                    {% if order_by == 'pbr' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </th>
+                <th>
+                    <a href="{{ url_for('stocks', status=status) }}?order_by=dividend_rate&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">배당</a>
+                    {% if order_by == 'dividend_rate' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </th>
+                <th>
+                    <a href="{{ url_for('stocks', status=status) }}?order_by=bps&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">BPS</a>
+                    {% if order_by == 'bps' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </th>
+                <th>
+                    <a href="{{ url_for('stocks', status=status) }}?order_by=future_roe&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">fROE</a>
+                    {% if order_by == 'future_roe' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </th>
+                <th>
+                    <a href="{{ url_for('stocks', status=status) }}?order_by=expected_rate&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">기대</a>
+                    {% if order_by == 'expected_rate' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </th>
+                <th>
+                    <a href="{{ url_for('stocks', status=status) }}?order_by=invest_price&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">투자가</a>
+                    {% if order_by == 'invest_price' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </th>
+                <th>
+                    <a href="{{ url_for('stocks', status=status) }}?order_by=expected_rate_by_current_pbr&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">현P기</a>
+                    {% if order_by == 'expected_rate_by_current_pbr' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </th>
+                <th>
+                    <a href="{{ url_for('stocks', status=status) }}?order_by=expected_rate_by_mid_pbr&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">중P기</a>
+                    {% if order_by == 'expected_rate_by_mid_pbr' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </th>
+                <th>
+                    <a href="{{ url_for('stocks', status=status) }}?order_by=expected_rate_by_low_pbr&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">저P기</a>
+                    {% if order_by == 'expected_rate_by_low_pbr' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </th>
+                <th>
+                    할인
+                </th>
+                <th>
+                    FScore
+                </th>
+                <th>
+                    <a href="{{ url_for('stocks', status=status) }}?order_by=peg_current_per&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">PEG(현)</a>
+                    {% if order_by == 'peg_current_per' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}                    
+                </th>
+                <th>
+                    상태
+                </th>
+                <th>외부</th>
+            </tr>
+            </thead>
+            <tbody>
+                {% for stock in stocks %}
+                <tr>
+                    <td>{{ stock.code }}</td>
+                    <td><a href="{{ url_for('stock', code=stock.code) }}">{{ stock.title }}</a></td>
+                    <td class="{{ stock.price_color }}">{{ stock.price_arrow }} {{ stock.current_price|round|int }}</td>
+                    <td class="{{ stock.price_color }}">{{ stock.price_sign }}{{ '%.2f'|format(stock.rate_diff) }}%</td>
+                    <td>{{ stock.per }}</td>
+                    <td>{{ stock.pbr }}</td>
+                    <td>{{ '%.2f'|format(stock.dividend_rate or 0) }}</td>
+                    <td>{{ (stock.bps or 0)|round|int or 0}}</td>
+                    <td>
+                         <div class="ui label">{{ '%.2f'|format(stock.future_roe or 0) }}</div>
+                        {% if 'adjusted_future_roe' in stock and stock['adjusted_future_roe']|float > 0 %}
+                            <div class="ui label yellow">{{ '%.2f'|format(stock.adjusted_future_roe or 0) }}</div>
+                        {% endif %}
+                    </td>
+                    <td>{{ '%.2f'|format(stock.expected_rate or 0) }}</td>
+                    <td>{{ (stock.invest_price or 0)|round|int or 0 }}</td>
+                    <td>{{ '%.2f'|format(stock.expected_rate_by_current_pbr or 0) }}</td>
+                    <td>{{ '%.2f'|format(stock.expected_rate_by_mid_pbr or 0) }}</td>
+                    <td>{{ '%.2f'|format(stock.expected_rate_by_low_pbr or 0) }}</td>
+                    <td>{{ '%.2f'|format(stock.intrinsic_discount_rate or 0) }}</td>
+                    <td>{{ stock.latest_fscore }}</td>
+                    <td>{{ '%.2f'|format(stock.peg_current_per or 0) }}</td>
+                    <td>
+                        {% if stock.owned %}
+                            <i class="icon heart red"></i>
+                        {% elif stock.starred %}
+                            <i class="icon star yellow"></i>
+                        {% endif %}
+                        {% if stock.has_note %}
+                            <i class="icon file alternate"></i>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="http://finance.daum.net/item/main.daum?code={{ stock.code }}" target="_blank">D</a> |
+                        <a href="http://finance.naver.com/item/main.nhn?code={{ stock.code }}" target="_blank">N</a> |
+                        <a href="{{ stock.financial_statements_url }}" target="_blank">배</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

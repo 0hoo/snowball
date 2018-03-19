@@ -1,0 +1,336 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h3 class="ui header">
+  <div class="content">
+      {{ stock.title }}
+      {% if stock.starred %}
+        <i class="icon star yellow"></i>
+      {% endif %}
+      {% if stock.owned %}
+        <i class="icon heart red"></i>
+      {% endif %}
+      <div class="sub header">{{ stock.code }}</div>
+  </div>
+</h3>
+
+<div class="ui stackable celled grid">
+    <div class="three column row">
+        <div class="column">
+            <table class="ui definition table">
+            <tbody>
+                <tr>
+                    <td>현재가</td>
+                    <td>{{ stock.current_price|round|int }}</td>
+                </tr>
+                <tr>
+                    <td>PER</td>
+                    <td {% if stock.per < 0 %}class="error"{% elif stock.per > 25 %}class="warning"{% endif %}>{{ stock.per }}</td>
+                </tr>
+                <tr>
+                    <td>PBR</td>
+                    <td {% if stock.pbr < 1 %}class="positive"{% endif %}>{{ stock.pbr }}</td>
+                </tr>
+                <tr>
+                    <td>거래량</td>
+                    <td>{{ stock.trade_volume|round|int }}</td>
+                </tr>
+                <tr>
+                    <td>거래대금</td>
+                    <td>{{ stock.trade_value|round|int }}</td>
+                </tr>
+                </tbody>
+            </table>
+            <table class="ui table">
+                <thead>
+                    <tr>
+                        <th>링크</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td><a href="http://finance.naver.com/item/main.nhn?code={{ stock.code }}" target="_blank">네이버</a></td></tr>
+                    <tr><td><a href="http://finance.naver.com/item/coinfo.nhn?code={{ stock.code }}" target="_blank">종목분석</a></td></tr>
+                    <tr><td><a href="{{ stock.financial_statements_url }}" target="_blank">주요재무정보</a></td></tr>
+                </tbody>
+            </table>
+            <table class="ui table">
+                <thead>
+                    <tr>
+                        <th>작업</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('stock_refresh', code=stock.code) }}" class="ui button">가격 / 기대수익률 리프레시</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            {% if stock.starred %}
+                                <a href="{{ url_for('stock_status', code=stock.code, status='starred', on='off') }}" class="ui button">
+                                    <i class="icon star outline"></i>
+                                    관심종목 제외
+                                </a>
+                            {% else %}
+                                <a href="{{ url_for('stock_status', code=stock.code, status='starred', on='on') }}" class="ui button">
+                                    <i class="icon star"></i>
+                                    관심종목
+                                </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            {% if stock.owned %}
+                            <a href="{{ url_for('stock_status', code=stock.code, status='owned', on='off') }}" class="ui button">
+                                <i class="icon minus"></i>
+                                보유종목 제외
+                            </a>
+                            {% else %}
+                            <a href="{{ url_for('stock_status', code=stock.code, status='owned', on='on') }}" class="ui button">
+                                <i class="icon plus"></i>
+                                보유종목
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <table class="ui definition table">
+            <tbody>
+                <tr>
+                    <td>숙향 조정 EPS</td>
+                    <td>{{ stock.adjusted_eps|round|int }}</td>
+                </tr>
+                <tr>
+                    <td>내재가치</td>
+                    <td>({{ stock.bps }} + ({{ stock.adjusted_eps }} x 10)) / 3 => <b>{{ stock.intrinsic_value|round|int }}</b></td>
+                </tr>
+                <tr>
+                    <td>할인률</td>
+                    <td>{{ '%.2f'|format(stock.intrinsic_discount_rate) }}%</b></td>
+                </tr>
+                </tbody>
+            </table>
+            <table class="ui table">
+                <thead>
+                    <tr>
+                        <th>연도</th>
+                        <th>EPS {% if not stock.is_last_year_roe %}(작년EPS 없음){% endif %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for eps in stock.epss %}
+                    <tr>
+                        <td {% if loop.index0 == stock.last_year_index %}class="positive"{% endif %}>
+                            {{eps.0}}
+                        </td>
+                        <td>
+                            {{eps.1|round|int}}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <table class="ui definition table">
+                <tbody>
+                    <tr>
+                        <td>EPS 상승률</td>
+                        <td>{{ '%.2f'|format(stock.eps_growth) }}</td>
+                    </tr>
+                    <tr>
+                        <td>PEG (현재PER)</td>
+                        <td>{{ '%.2f'|format(stock.peg_current_per) }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="column">
+            <div class="ui form">
+                <form method="POST" action="{{ url_for('stock_update_note', code=stock.code) }}">
+                    <div class="field">
+                        <label>노트</label>
+                        <textarea name="note">{{ stock.note }}</textarea>
+                    </div>
+                    <button class="ui button" type="submit">저장</button>
+                </form>
+            </div>
+            <table class="ui definition table">
+            <tbody>
+                <tr>
+                    <td>배당</td>
+                    <td>{{ '%.2f'|format(stock.dividend_rate or 0) }}</td>
+                </tr>
+                </tbody>
+            </table>
+            <table class="ui table">
+                <thead>
+                    <tr>
+                        <th>연도</th>
+                        <th>PBR {% if not stock.is_last_year_roe %}(작년 없음){% endif %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pbr in stock.pbrs %}
+                    <tr>
+                        <td {% if loop.index0 == stock.last_year_index %}class="positive"{% endif %}>
+                            {{pbr.0}}
+                        </td>
+                        <td>
+                            {{pbr.1}}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <table class="ui definition table">
+                <tbody>
+                    <tr>
+                        <td>현재PBR 기대수익률</td>
+                        <td>{{'%.2f'|format(stock.expected_rate_by_current_pbr)}}</td>
+                    </tr>
+                    <tr>
+                        <td>중간PBR 기대수익률</td>
+                        <td>{{'%.2f'|format(stock.expected_rate_by_mid_pbr)}}</td>
+                    </tr>
+                    <tr>
+                        <td>최저PBR 기대수익률</td>
+                        <td>{{'%.2f'|format(stock.expected_rate_by_low_pbr)}}</td>
+                    </tr>
+                </tbody>
+            </table>
+            <table class="ui definition table">
+                <tbody>
+                    <tr>
+                        <td>최소PBR x fBPS (1년)</td>
+                        <td>{{stock.low_pbr}} x {{stock.calc_future_bps(1)}} = {{stock.calc_future_price_low_pbr(1)}}</td>
+                    </tr>
+                    <tr>
+                        <td>최소PBR x fBPS (10년)</td>
+                        <td>{{stock.low_pbr}} x {{stock.calc_future_bps(10)}} = {{stock.calc_future_price_low_pbr(10)}}</td>
+                    </tr>
+                    <tr>
+                        <td>최대PBR x fBPS (1년)</td>
+                        <td>{{stock.high_pbr}} x {{stock.calc_future_bps(1)}} = {{stock.calc_future_price_high_pbr(1)}}</td>
+                    </tr>
+                    <tr>
+                        <td>최대PBR x fBPS (10년)</td>
+                        <td>{{stock.high_pbr}} x {{stock.calc_future_bps(10)}} = {{stock.calc_future_price_high_pbr(10)}}</td>
+                    </tr>
+                    <tr>
+                        <td>현재PBR x fBPS (1년)</td>
+                        <td>{{stock.pbr}} x {{stock.calc_future_bps(1)}} = {{stock.calc_future_price_current_pbr(1)}}</td>
+                    </tr>
+                    <tr>
+                        <td>현재PBR x fBPS (10년)</td>
+                        <td>{{stock.pbr}} x {{stock.calc_future_bps(10)}} = {{stock.calc_future_price_current_pbr(10)}}</td>
+                    </tr>
+                    <tr>
+                        <td>중간PBR x fBPS (1년)</td>
+                        <td>{{'%.2f'|format(stock.mid_pbr)}} x {{stock.calc_future_bps(1)}} = {{stock.calc_future_price_low_current_mid_pbr(1)}}</td>
+                    </tr>
+                    <tr>
+                        <td>중간PBR x fBPS (10년)</td>
+                        <td>{{'%.2f'|format(stock.mid_pbr)}} x {{stock.calc_future_bps(10)}} = {{stock.calc_future_price_low_current_mid_pbr(10)}}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="column">
+            <table class="ui definition table">
+                <tbody>
+                    <tr>
+                        <td>BPS</td>
+                        <td>{{ (stock.bps or 0)|round|int or 0}}</td>
+                    </tr>
+                    <tr>
+                        <td>fBPS</td>
+                        <td>{{ (stock.future_bps or 0)|round|int or 0 }}</td>
+                    </tr>
+                    <tr>
+                        <td>fROE</td>
+                        <td>{{ '%.2f'|format(stock.future_roe or 0) }}
+                            {% if 'adjusted_future_roe' in stock and stock['adjusted_future_roe']|float > 0 %}
+                             <div class="ui horizontal label yellow">사용자 입력 ROE 있음</div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>연간기대</td>
+                        <td {% if stock.expected_rate >= 15 %}class="positive"{% endif %}>{{ '%.2f'|format(stock.expected_rate or 0) }}</td>
+                    </tr>
+                    <tr>
+                        <td>투자가능</td>
+                        <td>{{ (stock.invest_price or 0)|round|int or 0 }}</td>
+                    </tr>
+                </tbody>
+            </table>
+            <table class="ui table">
+                <thead>
+                    <tr>
+                        <th>연도</th>
+                        <th>ROE {% if not stock.is_last_year_roe %}(작년ROE 없음){% endif %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for roe in stock.roes %}
+                    <tr>
+                        <td {% if loop.index0 == stock.last_year_index %}class="positive"{% endif %}>
+                            {{roe.0}}
+                        </td>
+                        <td  {% if roe.1 < 5 %}class="warning"{% endif %}>
+                            {{roe.1}}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <table class="ui definition table">
+                <tbody>
+                    <tr>
+                        <td>ROE 최대최소차</td>
+                        <td {% if stock.roe_max_diff > 12 %}class="error"{% elif stock.roe_max_diff > 5.5 %}class="warning"{% endif %}>{{ '%.2f'|format(stock.roe_max_diff or 0) }}</td>
+                    </tr>
+                    <tr>
+                        <td>ROE 평균과 최소의 중간</td>
+                        <td>{{ '%.2f'|format(stock.mid_roe or 0) }}</td>
+                    </tr>
+                </tbody>
+            </table>
+            <form class="ui form" action="{{ url_for('stock_adjusted_future_roe', code=stock.code) }}" method="post">
+                <div class="field">
+                <label>정 ROE</label>
+                    <input name="adjusted_future_roe" placeholder="조정 ROE" type="text" {% if 'adjusted_future_roe' in stock %}value="{{ stock.adjusted_future_roe }}"{% endif %}>
+                </div>
+                <button class="ui button" type="submit">저장</button>
+                <a href="{{ url_for('stock_clear_adjusted_future_roe', code=stock.code) }}" class="ui button">조정 ROE 삭제</a>
+            </form>
+            <table class="ui table">
+                <thead>
+                    <tr>
+                        <th>연도</th>
+                        <th>FScore</th>
+                        <th>주식수</th>
+                        <th>흑자</th>
+                        <th>CFO</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fscore in stock.fscores %}
+                    <tr>
+                        <td>{{ fscore[0] }}</td>
+                        <td>{{ fscore[1].total_issued_stock + fscore[1].profitable + fscore[1].cfo }}</td>
+                        <td>{{ fscore[1].total_issued_stock }}</td>
+                        <td>{{ fscore[1].profitable }}</td>
+                        <td>{{ fscore[1].cfo }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
