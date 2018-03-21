@@ -124,6 +124,9 @@
                         {% if stock.has_note %}
                             <i class="icon file alternate"></i>
                         {% endif %}
+                        {% if stock.doubtful %}
+                        <i class="icon flag red"></i>
+                        {% endif %}
                     </td>
                     <td>
                         <a href="http://finance.daum.net/item/main.daum?code={{ stock.code }}" target="_blank">D</a> |

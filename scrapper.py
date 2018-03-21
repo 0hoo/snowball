@@ -101,8 +101,11 @@ def parse_snowball(code):
     url = NAVER_YEARLY % (code)
     tree = tree_from_url(url)
 
-    years = list(filter(lambda x: x != '', map(lambda x: x.strip().split('/')[0], tree.xpath('/html/body/table/thead/tr[2]/th/text()'))))
-    last_year_index = years.index(LAST_YEAR)
+    try:
+        years = list(filter(lambda x: x != '', map(lambda x: x.strip().split('/')[0], tree.xpath('/html/body/table/thead/tr[2]/th/text()'))))
+        last_year_index = years.index(LAST_YEAR)
+    except ValueError:
+        return
 
     ROEs = tree.xpath('/html/body/table/tbody/tr[22]/td/span/text()')
     if len(ROEs) == 0:

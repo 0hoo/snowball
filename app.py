@@ -16,6 +16,8 @@ def stocks(status=None):
         find = {'owned': True}
     elif status == 'starredorowned':
         find = {'$or': [{'starred': True}, {'owned': True}]}
+    elif status == 'doubtful':
+        find = {'doubtful': True}
     order_by = request.args.get('order_by', 'expected_rate')
     ordering = request.args.get('ordering', 'desc')
     stocks = db.all_stocks(order_by=order_by, ordering=ordering, find=find)
@@ -45,6 +47,15 @@ def stock_adjusted_future_roe(code):
     if request.method == 'POST':
         stock = db.stock_by_code(code)
         stock['adjusted_future_roe'] = float(request.form.get('adjusted_future_roe', 0))
+        db.save_stock(stock)
+        return redirect(url_for('stock_refresh', code=code))
+
+
+@app.route('/stock/<code>/adjustpbr', methods=['POST'])
+def stock_adjusted_future_pbr(code):
+    if request.method == 'POST':
+        stock = db.stock_by_code(code)
+        stock['adjusted_future_pbr'] = float(request.form.get('adjusted_future_pbr', 0))
         db.save_stock(stock)
         return redirect(url_for('stock_refresh', code=code))
 

@@ -54,6 +54,10 @@ class Stock(UserDict):
         return self.year_stat('PBRs')
 
     @property
+    def pers(self):
+        return self.year_stat('PERs')
+
+    @property
     def epss(self):
         return self.year_stat('EPSs')
 
@@ -113,6 +117,16 @@ class Stock(UserDict):
         NPs = self.year_stat('NPs')
         return [(np[0], self.fscore(np[0])) for np in NPs]
 
+    @property
+    def mean_per(self):
+        PERs = self.get('PERs', [])
+        return mean(PERs) if len(PERs) > 2 else 0
+
+    @property
+    def expected_rate_by_adjusted_future_pbr(self):
+        current_price = self.get('current_price', 0)
+        return ((self.calc_future_price_adjusted_future_pbr(FUTURE) / float(current_price)) ** (1.0 / FUTURE) - 1) * 100        
+
     def calc_future_bps(self, future):
         future_roe = self.get('future_roe', 0)
         bps = self.get('bps', 0)
@@ -132,6 +146,9 @@ class Stock(UserDict):
 
     def calc_future_price_low_current_mid_pbr(self, future):
         return int(self.calc_future_bps(future) * self.mid_pbr)
+
+    def calc_future_price_adjusted_future_pbr(self, future):
+        return int(self.calc_future_bps(future) * self.get('adjusted_future_pbr', 0))
 
     def fscore(self, year):
         total_issued_stock = 0
@@ -191,6 +208,7 @@ class Stock(UserDict):
 
         #PEG
         peg_current_per = self.get('per', 0) / self.eps_growth if self.eps_growth != 0 else 0
+        peg_mean_per = self.mean_per / self.eps_growth if self.eps_growth != 0 else 0
 
         #최근 FScore
         fscore = self.fscores[-1][1]
@@ -208,6 +226,7 @@ class Stock(UserDict):
             'intrinsic_value': intrinsic_value,
             'intrinsic_discount_rate': intrinsic_discount_rate,
             'peg_current_per': peg_current_per,
+            'peg_mean_per': peg_mean_per,
             'fscore_total_issued_stock': fscore.total_issued_stock,
             'fscore_profitable': fscore.profitable,
             'fscore_cfo': fscore.cfo,   

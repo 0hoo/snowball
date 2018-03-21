@@ -96,6 +96,21 @@
                             {% endif %}
                         </td>
                     </tr>
+                    <tr>
+                        <td>
+                            {% if stock.doubtful %}
+                            <a href="{{ url_for('stock_status', code=stock.code, status='doubtful', on='off') }}" class="ui button">
+                                <i class="icon flag outline"></i>
+                                데이터 의심 제외
+                            </a>
+                            {% else %}
+                            <a href="{{ url_for('stock_status', code=stock.code, status='doubtful', on='on') }}" class="ui button">
+                                <i class="icon flag"></i>
+                                데이터 의심
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
                 </tbody>
             </table>
             <table class="ui definition table">
@@ -144,6 +159,10 @@
                         <td>PEG (현재PER)</td>
                         <td>{{ '%.2f'|format(stock.peg_current_per) }}</td>
                     </tr>
+                    <tr>
+                        <td>PER (평균PER)</td>
+                        <td>{{ '%.2f'|format(stock.peg_mean_per) }}</td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -163,6 +182,26 @@
                     <td>배당</td>
                     <td>{{ '%.2f'|format(stock.dividend_rate or 0) }}</td>
                 </tr>
+                </tbody>
+            </table>
+            <table class="ui table">
+                <thead>
+                    <tr>
+                        <th>연도</th>
+                        <th>PER {% if not stock.is_last_year_roe %}(작년 없음){% endif %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for per in stock.pers %}
+                    <tr>
+                        <td {% if loop.index0 == stock.last_year_index %}class="positive"{% endif %}>
+                            {{per.0}}
+                        </td>
+                        <td>
+                            {{per.1}}
+                        </td>
+                    </tr>
+                    {% endfor %}
                 </tbody>
             </table>
             <table class="ui table">
@@ -196,29 +235,34 @@
                         <td>{{'%.2f'|format(stock.expected_rate_by_mid_pbr)}}</td>
                     </tr>
                     <tr>
-                        <td>최저PBR 기대수익률</td>
+                        <td>저PBR 기대수익률</td>
                         <td>{{'%.2f'|format(stock.expected_rate_by_low_pbr)}}</td>
                     </tr>
+                    {% if 'adjusted_future_pbr' in stock %}
+                    <tr>
+                        <td>조정PBR 기대수익률</td>
+                        <td>{{'%2.f'|format(stock.expected_rate_by_adjusted_future_pbr)}}</td>
+                    </tr>
+                    <tr>
+                        <td>조정PBR x fBPS (1년)</td>
+                        <td>{{ stock.calc_future_price_adjusted_future_pbr(1) }}</td>
+                    </tr>
+                    <tr>
+                        <td>조정PBR x fBPS (10년)</td>
+                        <td>{{ stock.calc_future_price_adjusted_future_pbr(10) }}</td>
+                    </tr>
+                    {% endif %}
                 </tbody>
             </table>
+            <form class="ui form" action="{{ url_for('stock_adjusted_future_pbr', code=stock.code) }}" method="post">
+                <div class="field">
+                    <label>조정 PBR</label>
+                    <input name="adjusted_future_pbr" placeholder="조정 PBR" type="text" {% if 'adjusted_future_pbr' in stock %}value="{{ stock.adjusted_future_pbr }}"{% endif %}>
+                </div>
+                <button class="ui button" type="submit">저장</button>
+            </form>
             <table class="ui definition table">
                 <tbody>
-                    <tr>
-                        <td>최소PBR x fBPS (1년)</td>
-                        <td>{{stock.low_pbr}} x {{stock.calc_future_bps(1)}} = {{stock.calc_future_price_low_pbr(1)}}</td>
-                    </tr>
-                    <tr>
-                        <td>최소PBR x fBPS (10년)</td>
-                        <td>{{stock.low_pbr}} x {{stock.calc_future_bps(10)}} = {{stock.calc_future_price_low_pbr(10)}}</td>
-                    </tr>
-                    <tr>
-                        <td>최대PBR x fBPS (1년)</td>
-                        <td>{{stock.high_pbr}} x {{stock.calc_future_bps(1)}} = {{stock.calc_future_price_high_pbr(1)}}</td>
-                    </tr>
-                    <tr>
-                        <td>최대PBR x fBPS (10년)</td>
-                        <td>{{stock.high_pbr}} x {{stock.calc_future_bps(10)}} = {{stock.calc_future_price_high_pbr(10)}}</td>
-                    </tr>
                     <tr>
                         <td>현재PBR x fBPS (1년)</td>
                         <td>{{stock.pbr}} x {{stock.calc_future_bps(1)}} = {{stock.calc_future_price_current_pbr(1)}}</td>
@@ -234,6 +278,22 @@
                     <tr>
                         <td>중간PBR x fBPS (10년)</td>
                         <td>{{'%.2f'|format(stock.mid_pbr)}} x {{stock.calc_future_bps(10)}} = {{stock.calc_future_price_low_current_mid_pbr(10)}}</td>
+                    </tr>
+                    <tr>
+                        <td>최저PBR x fBPS (1년)</td>
+                        <td>{{stock.low_pbr}} x {{stock.calc_future_bps(1)}} = {{stock.calc_future_price_low_pbr(1)}}</td>
+                    </tr>
+                    <tr>
+                        <td>최저PBR x fBPS (10년)</td>
+                        <td>{{stock.low_pbr}} x {{stock.calc_future_bps(10)}} = {{stock.calc_future_price_low_pbr(10)}}</td>
+                    </tr>
+                    <tr>
+                        <td>최대PBR x fBPS (1년)</td>
+                        <td>{{stock.high_pbr}} x {{stock.calc_future_bps(1)}} = {{stock.calc_future_price_high_pbr(1)}}</td>
+                    </tr>
+                    <tr>
+                        <td>최대PBR x fBPS (10년)</td>
+                        <td>{{stock.high_pbr}} x {{stock.calc_future_bps(10)}} = {{stock.calc_future_price_high_pbr(10)}}</td>
                     </tr>
                 </tbody>
             </table>
@@ -301,7 +361,7 @@
             </table>
             <form class="ui form" action="{{ url_for('stock_adjusted_future_roe', code=stock.code) }}" method="post">
                 <div class="field">
-                <label>정 ROE</label>
+                <label>조정 ROE</label>
                     <input name="adjusted_future_roe" placeholder="조정 ROE" type="text" {% if 'adjusted_future_roe' in stock %}value="{{ stock.adjusted_future_roe }}"{% endif %}>
                 </div>
                 <button class="ui button" type="submit">저장</button>
