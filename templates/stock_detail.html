@@ -1,6 +1,44 @@
 {% extends "base.html" %}
 
 {% block content %}
+<script>
+window.chartColors = {
+	red: 'rgb(255, 99, 132)',
+	orange: 'rgb(255, 159, 64)',
+	yellow: 'rgb(255, 205, 86)',
+	green: 'rgb(75, 192, 192)',
+	blue: 'rgb(54, 162, 235)',
+	purple: 'rgb(153, 102, 255)',
+	grey: 'rgb(201, 203, 207)'
+};
+
+function lineChart(elementId, label, labels, data, color) {
+    var ctx = document.getElementById(elementId).getContext('2d');
+    var roeChart = new Chart(ctx, {
+        type:'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: label,
+                backgroundColor: color,
+                borderColor: color,
+                data: data,
+                fill: false
+            }]
+        },
+        options: {
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero:true
+                    }
+                }]
+            }
+        }
+    });
+}
+
+</script>
 
 <h3 class="ui header">
   <div class="content">
@@ -149,6 +187,12 @@
                     {% endfor %}
                 </tbody>
             </table>
+            <canvas id="epsChart" width="300" height="250"></canvas>
+            <script>
+                var epsLabels = [{% for eps in stock.epss %}"{{ eps.0 }}",{% endfor %}];
+                var epsData = [{% for eps in stock.epss %}{{ eps.1 }},{% endfor %}];
+                lineChart("epsChart", 'EPS', epsLabels, epsData, window.chartColors.blue);
+            </script>
             <table class="ui definition table">
                 <tbody>
                     <tr>
@@ -224,6 +268,12 @@
                     {% endfor %}
                 </tbody>
             </table>
+            <canvas id="pbrChart" width="300" height="250"></canvas>
+            <script>
+                var pbrLabels = [{% for pbr in stock.pbrs %}"{{ pbr.0 }}",{% endfor %}];
+                var pbrData = [{% for pbr in stock.pbrs %}{{ pbr.1 }},{% endfor %}];
+                lineChart("pbrChart", 'PBR', pbrLabels, pbrData, window.chartColors.green);
+            </script>
             <table class="ui definition table">
                 <tbody>
                     <tr>
@@ -347,6 +397,12 @@
                     {% endfor %}
                 </tbody>
             </table>
+            <canvas id="roeChart" width="300" height="250"></canvas>
+            <script>
+                var roeLabels = [{% for roe in stock.roes %}"{{ roe.0 }}",{% endfor %}];
+                var roeData = [{% for roe in stock.roes %}{{ roe.1 }},{% endfor %}];
+                lineChart("roeChart", 'ROE', roeLabels, roeData, window.chartColors.red);
+            </script>
             <table class="ui definition table">
                 <tbody>
                     <tr>
