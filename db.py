@@ -1,8 +1,17 @@
+from typing import Tuple, List
+
 from datetime import datetime
 from statistics import mean
 from collections import UserDict, namedtuple
 
 from pymongo import MongoClient, ASCENDING, DESCENDING
+
+
+FScore = namedtuple('FScore', ['total_issued_stock', 'profitable', 'cfo'])
+
+
+YEAR_STAT = Tuple[int, int]
+YEAR_FSCORE = Tuple[int, FScore]
 
 
 client = MongoClient()
@@ -15,66 +24,63 @@ TARGET_RATE = 15
 LAST_YEAR = datetime.now().year - 1
 
 
-FScore = namedtuple('FScore', ['total_issued_stock', 'profitable', 'cfo'])
-
-
 class Stock(UserDict):
     @property
-    def object_id(self):
+    def object_id(self) -> str:
         return self['_id']
 
     @property
-    def price_arrow(self):
+    def price_arrow(self) -> str:
         if self.get('price_diff') == 0:
             return ''
         else:
             return '▲' if self.get('price_diff') > 0 else '▼'
 
     @property
-    def price_color(self):
+    def price_color(self) -> str:
         if self.get('price_diff') == 0:
             return 'black'
         else:
             return 'red' if self.get('price_diff') > 0 else 'blue'
 
     @property
-    def price_sign(self):
+    def price_sign(self) -> str:
         return '+' if self.get('price_diff') > 0 else ''
 
     @property
-    def financial_statements_url(self):
+    def financial_statements_url(self) -> str:
         return "http://companyinfo.stock.naver.com/v1/company/ajax/cF1001.aspx?cmp_cd=%s&fin_typ=0&freq_typ=Y" % (self['code'])
 
     @property
-    def roes(self):
+    def roes(self) -> List[Tuple[int, int]]:
         return self.year_stat('ROEs')
 
     @property
-    def pbrs(self):
+    def pbrs(self) -> List[Tuple[int, int]]:
         return self.year_stat('PBRs')
 
     @property
-    def pers(self):
+    def pers(self) -> List[Tuple[int, int]]:
         return self.year_stat('PERs')
 
     @property
-    def epss(self):
+    def epss(self) -> List[Tuple[int, int]]:
         return self.year_stat('EPSs')
 
     @property
-    def low_pbr(self):
+    def low_pbr(self) -> float:
         return min(self.get('PBRs', [0]))
 
     @property
-    def high_pbr(self):
+    def high_pbr(self) -> float:
         return max(self.get('PBRs', [0]))
 
     @property
-    def mid_pbr(self):
+    def mid_pbr(self) -> float:
         return (self.low_pbr + self.get('pbr')) / 2
     
     @property
-    def adjusted_eps(self):
+    def adjusted_eps(self) -> int:
         if (not ('EPSs' in self)) or len(self['EPSs']) < 3:
             return 0
         last_year_index = self['last_year_index']
@@ -84,17 +90,17 @@ class Stock(UserDict):
         return int(((past_eps[-1] * 3) + (past_eps[-2] * 2) + past_eps[-3]) / 6)
 
     @property
-    def roe_max_diff(self):
+    def roe_max_diff(self) -> float:
         ROEs = self.get('ROEs', [])
         return max(ROEs) - min(ROEs) if len(ROEs) > 2 else 0
 
     @property
-    def mid_roe(self):
+    def mid_roe(self) -> float:
         ROEs = self.get('ROEs', [])
         return mean([mean(ROEs), min(ROEs)]) if len(ROEs) > 2 else 0    
 
     @property
-    def eps_growth(self):
+    def eps_growth(self) -> float:
         EPSs = self.get('EPSs', [])
         try:
             return mean([y/x - 1 for x, y in zip(EPSs[:-1], EPSs[1:])]) * 100
@@ -102,32 +108,32 @@ class Stock(UserDict):
             return 0
 
     @property
-    def has_note(self):
+    def has_note(self) -> bool:
         return len(self.get('note', '')) > 0
 
     @property
-    def latest_fscore(self):
+    def latest_fscore(self) -> int:
         return sum([
             self.get('fscore_total_issued_stock', 0), 
             self.get('fscore_profitable', 0), 
             self.get('fscore_cfo', 0)])
 
     @property
-    def fscores(self):
+    def fscores(self) -> List[Tuple[int, FScore]]:
         NPs = self.year_stat('NPs')
         return [(np[0], self.fscore(np[0])) for np in NPs]
 
     @property
-    def mean_per(self):
+    def mean_per(self) -> float:
         PERs = self.get('PERs', [])
         return mean(PERs) if len(PERs) > 2 else 0
 
     @property
-    def expected_rate_by_adjusted_future_pbr(self):
+    def expected_rate_by_adjusted_future_pbr(self) -> float:
         current_price = self.get('current_price', 0)
         return ((self.calc_future_price_adjusted_future_pbr(FUTURE) / float(current_price)) ** (1.0 / FUTURE) - 1) * 100        
 
-    def calc_future_bps(self, future):
+    def calc_future_bps(self, future) -> int:
         future_roe = self.get('future_roe', 0)
         bps = self.get('bps', 0)
         adjusted_future_roe = self.get('adjusted_future_roe', 0)
@@ -135,22 +141,22 @@ class Stock(UserDict):
             future_roe = adjusted_future_roe
         return int(bps * ((1 + (1 * future_roe / 100)) ** future))
 
-    def calc_future_price_low_pbr(self, future):
+    def calc_future_price_low_pbr(self, future) -> int:
         return int(self.calc_future_bps(future) * self.low_pbr)
 
-    def calc_future_price_high_pbr(self, future):
+    def calc_future_price_high_pbr(self, future) -> int:
         return int(self.calc_future_bps(future) * self.high_pbr)
 
-    def calc_future_price_current_pbr(self, future):
+    def calc_future_price_current_pbr(self, future) -> int:
         return int(self.calc_future_bps(future) * self['pbr'])
 
-    def calc_future_price_low_current_mid_pbr(self, future):
+    def calc_future_price_low_current_mid_pbr(self, future) -> int:
         return int(self.calc_future_bps(future) * self.mid_pbr)
 
-    def calc_future_price_adjusted_future_pbr(self, future):
+    def calc_future_price_adjusted_future_pbr(self, future) -> int:
         return int(self.calc_future_bps(future) * self.get('adjusted_future_pbr', 0))
 
-    def fscore(self, year):
+    def fscore(self, year) -> FScore:
         total_issued_stock = 0
         profitable = 0
         cfo = 0
@@ -233,7 +239,7 @@ class Stock(UserDict):
         }
         save_stock(stock)
 
-    def year_stat(self, stat):
+    def year_stat(self, stat) -> List[Tuple[int, int]]:
         stats = self.get(stat)
         last_year_index = self.get('last_year_index')
         past_stats = stats[0:last_year_index]
@@ -250,11 +256,11 @@ class Stock(UserDict):
             result.append((year, value))
         return past_result + result
 
-    def __str__(self):
+    def __str__(self) -> str:
         return '{} : {}'.format(self['title'], self['code'])
 
 
-def all_stocks(order_by='title', ordering='asc', find=None):
+def all_stocks(order_by='title', ordering='asc', find=None) -> List[Stock]:
     if find:
         stocks = db.stocks.find(find).sort(order_by, ASCENDING if ordering == 'asc' else DESCENDING)
     else:
@@ -262,11 +268,11 @@ def all_stocks(order_by='title', ordering='asc', find=None):
     return [Stock(s) for s in stocks]
 
 
-def stock_by_code(code):
+def stock_by_code(code) -> Stock:
     return Stock(db.stocks.find_one({'code': code}))
 
 
-def save_stock(stock):
+def save_stock(stock) -> Stock:
     exist = db.stocks.find_one({'code': stock['code']})
     if exist:
         print("update:" ,stock)
