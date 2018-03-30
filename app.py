@@ -18,6 +18,12 @@ def stocks(status=None):
         find = {'$or': [{'starred': True}, {'owned': True}]}
     elif status == 'doubtful':
         find = {'doubtful': True}
+    elif status == 'roe_max_diff_20':
+        find = {'roe_max_diff': {'$lt': 20}}
+    elif status == 'roe_max_diff_10':
+        find = {'roe_max_diff': {'$lt': 10}}
+    elif status == 'roe_max_diff_5':
+        find = {'roe_max_diff': {'$lt': 5}}
     order_by = request.args.get('order_by', 'expected_rate')
     ordering = request.args.get('ordering', 'desc')
     stocks = db.all_stocks(order_by=order_by, ordering=ordering, find=find)

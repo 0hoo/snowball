@@ -90,11 +90,6 @@ class Stock(UserDict):
         return int(((past_eps[-1] * 3) + (past_eps[-2] * 2) + past_eps[-3]) / 6)
 
     @property
-    def roe_max_diff(self) -> float:
-        ROEs = self.get('ROEs', [])
-        return max(ROEs) - min(ROEs) if len(ROEs) > 2 else 0
-
-    @property
     def mid_roe(self) -> float:
         ROEs = self.get('ROEs', [])
         return mean([mean(ROEs), min(ROEs)]) if len(ROEs) > 2 else 0    
@@ -190,6 +185,9 @@ class Stock(UserDict):
         tax_adjust = dividend_rate * (DIVIDEND_TAX_RATE / 100)
         #4년 평균 ROE
         mean_roe = mean(last_four_years_roe)
+        #ROE 최대 최소차
+        roe_max_diff = max(ROEs) - min(ROEs) if len(ROEs) > 2 else 0
+
         #기대 ROE
         future_roe = mean_roe - tax_adjust
         self['future_roe'] = future_roe
@@ -222,6 +220,7 @@ class Stock(UserDict):
         stock = {
             'code': code,
             'mean_roe': mean_roe,
+            'roe_max_diff': roe_max_diff,
             'future_roe': future_roe,
             'future_bps': future_bps,
             'expected_rate': expected_rate,
@@ -235,7 +234,7 @@ class Stock(UserDict):
             'peg_mean_per': peg_mean_per,
             'fscore_total_issued_stock': fscore.total_issued_stock,
             'fscore_profitable': fscore.profitable,
-            'fscore_cfo': fscore.cfo,   
+            'fscore_cfo': fscore.cfo,
         }
         save_stock(stock)
 
