@@ -109,7 +109,7 @@
                     </td>
                     <td>{{ '%.2f'|format(stock.expected_rate or 0) }}</td>
                     <td>{{ (stock.invest_price or 0)|round|int or 0 }}</td>
-                    <td>{{ '%.2f'|format(stock.expected_rate_by_current_pbr or 0) }}</td>
+                    <td>{% if stock.low_pbr > stock.pbr %}<span class="ui label black">{% endif %}{{ '%.2f'|format(stock.expected_rate_by_current_pbr or 0) }}{% if stock.low_pbr > stock.pbr %}</span>{% endif %}</td>
                     <td>{{ '%.2f'|format(stock.expected_rate_by_mid_pbr or 0) }}</td>
                     <td>{{ '%.2f'|format(stock.expected_rate_by_low_pbr or 0) }}</td>
                     <td>{{ '%.2f'|format(stock.intrinsic_discount_rate or 0) }}</td>

@@ -69,11 +69,11 @@ class Stock(UserDict):
 
     @property
     def low_pbr(self) -> float:
-        return min(self.get('PBRs', [0]))
+        return min([year_pbr[1] for year_pbr in self.year_stat('PBRs', exclude_future=True)])
 
     @property
     def high_pbr(self) -> float:
-        return max(self.get('PBRs', [0]))
+        return max([year_pbr[1] for year_pbr in self.year_stat('PBRs', exclude_future=True)])
 
     @property
     def mid_pbr(self) -> float:
@@ -239,22 +239,26 @@ class Stock(UserDict):
         }
         save_stock(stock)
 
-    def year_stat(self, stat) -> List[Tuple[int, int]]:
+    def year_stat(self, stat, exclude_future=False) -> List[Tuple[int, int]]:
         stats = self.get(stat)
         last_year_index = self.get('last_year_index')
-        past_stats = stats[0:last_year_index]
-        last_to_future_stats = stats[last_year_index:10]
-        past_result = []
-        past_stats.reverse()
-        for idx, value in enumerate(past_stats):
-            year = LAST_YEAR - idx - 1
-            past_result.insert(0, (year, value))
+        year = lambda idx: LAST_YEAR - (last_year_index - idx)
+        return [(year(idx), value) for idx, value in enumerate(stats) 
+            if not exclude_future or year(idx) <= LAST_YEAR]    
+        # past_stats = stats[0:last_year_index]
+        # last_to_future_stats = stats[last_year_index:10]
+        # past_result = []
+        # past_stats.reverse()
+        # for idx, value in enumerate(past_stats):
+        #     year = LAST_YEAR - idx - 1
+        #     past_result.insert(0, (year, value))
 
-        result = []
-        for idx, value in enumerate(last_to_future_stats):
-            year = LAST_YEAR + idx
-            result.append((year, value))
-        return past_result + result
+        # result = []
+        # for idx, value in enumerate(last_to_future_stats):
+        #     year = LAST_YEAR + idx
+        #     result.append((year, value))
+
+        #return result
 
     def __str__(self) -> str:
         return '{} : {}'.format(self['title'], self['code'])

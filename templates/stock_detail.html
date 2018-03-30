@@ -209,25 +209,6 @@ function lineChart(elementId, label, labels, data, color) {
                     </tr>
                 </tbody>
             </table>
-        </div>
-        <div class="column">
-            <div class="ui form">
-                <form method="POST" action="{{ url_for('stock_update_note', code=stock.code) }}">
-                    <div class="field">
-                        <label>노트</label>
-                        <textarea name="note">{{ stock.note }}</textarea>
-                    </div>
-                    <button class="ui button" type="submit">저장</button>
-                </form>
-            </div>
-            <table class="ui definition table">
-            <tbody>
-                <tr>
-                    <td>배당</td>
-                    <td>{{ '%.2f'|format(stock.dividend_rate or 0) }}</td>
-                </tr>
-                </tbody>
-            </table>
             <table class="ui table">
                 <thead>
                     <tr>
@@ -246,6 +227,25 @@ function lineChart(elementId, label, labels, data, color) {
                         </td>
                     </tr>
                     {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="column">
+            <div class="ui form">
+                <form method="POST" action="{{ url_for('stock_update_note', code=stock.code) }}">
+                    <div class="field">
+                        <label>노트</label>
+                        <textarea name="note">{{ stock.note }}</textarea>
+                    </div>
+                    <button class="ui button" type="submit">저장</button>
+                </form>
+            </div>
+            <table class="ui definition table">
+            <tbody>
+                <tr>
+                    <td>배당</td>
+                    <td>{{ '%.2f'|format(stock.dividend_rate or 0) }}</td>
+                </tr>
                 </tbody>
             </table>
             <table class="ui table">
@@ -277,15 +277,15 @@ function lineChart(elementId, label, labels, data, color) {
             <table class="ui definition table">
                 <tbody>
                     <tr>
-                        <td>현재PBR 기대수익률</td>
-                        <td>{{'%.2f'|format(stock.expected_rate_by_current_pbr)}}</td>
+                        <td>현재PBR 기대수익률 ({{ '%.2f'|format(stock.pbr)}})</td>
+                        <td {% if stock.low_pbr > stock.pbr %}class="positive"{% endif %}>{{'%.2f'|format(stock.expected_rate_by_current_pbr)}}</td>
                     </tr>
                     <tr>
-                        <td>중간PBR 기대수익률</td>
+                        <td>중간PBR 기대수익률 ({{ '%.2f'|format(stock.mid_pbr) }})</td>
                         <td>{{'%.2f'|format(stock.expected_rate_by_mid_pbr)}}</td>
                     </tr>
                     <tr>
-                        <td>저PBR 기대수익률</td>
+                        <td>최저PBR 기대수익률 ({{ '%.2f'|format(stock.low_pbr) }})</td>
                         <td>{{'%.2f'|format(stock.expected_rate_by_low_pbr)}}</td>
                     </tr>
                     {% if 'adjusted_future_pbr' in stock %}
@@ -390,7 +390,7 @@ function lineChart(elementId, label, labels, data, color) {
                         <td {% if loop.index0 == stock.last_year_index %}class="positive"{% endif %}>
                             {{roe.0}}
                         </td>
-                        <td  {% if roe.1 < 5 %}class="warning"{% endif %}>
+                        <td {% if roe.1 < 5 %}class="warning"{% endif %}>
                             {{roe.1}}
                         </td>
                     </tr>
