@@ -60,6 +60,14 @@ def stock_adjusted_future_pbr(code):
         return redirect(url_for('stock_refresh', code=code))
 
 
+@app.route('/stock/<code>/adjustpbr/clear')
+def stock_clear_adjusted_future_pbr(code):
+    stock = db.stock_by_code(code)
+    stock['adjusted_future_pbr'] = 0
+    db.save_stock(stock)
+    return redirect(url_for('stock_refresh', code=code))
+
+
 @app.route('/stock/<code>/node', methods=['POST'])
 def stock_update_note(code):
     if request.method == 'POST':

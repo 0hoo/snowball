@@ -288,7 +288,7 @@ function lineChart(elementId, label, labels, data, color) {
                         <td>최저PBR 기대수익률 ({{ '%.2f'|format(stock.low_pbr) }})</td>
                         <td>{{'%.2f'|format(stock.expected_rate_by_low_pbr)}}</td>
                     </tr>
-                    {% if 'adjusted_future_pbr' in stock %}
+                    {% if 'adjusted_future_pbr' in stock and stock.adjusted_future_pbr > 0 %}
                     <tr>
                         <td>조정PBR 기대수익률</td>
                         <td>{{'%2.f'|format(stock.expected_rate_by_adjusted_future_pbr)}}</td>
@@ -310,6 +310,7 @@ function lineChart(elementId, label, labels, data, color) {
                     <input name="adjusted_future_pbr" placeholder="조정 PBR" type="text" {% if 'adjusted_future_pbr' in stock %}value="{{ stock.adjusted_future_pbr }}"{% endif %}>
                 </div>
                 <button class="ui button" type="submit">저장</button>
+                <a href="{{ url_for('stock_clear_adjusted_future_pbr', code=stock.code) }}" class="ui button">조정 PBR 삭제</a>
             </form>
             <table class="ui definition table">
                 <tbody>

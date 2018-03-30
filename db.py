@@ -241,24 +241,12 @@ class Stock(UserDict):
 
     def year_stat(self, stat, exclude_future=False) -> List[Tuple[int, int]]:
         stats = self.get(stat)
+        if not stats:
+            return [(0, 0)]
         last_year_index = self.get('last_year_index')
         year = lambda idx: LAST_YEAR - (last_year_index - idx)
         return [(year(idx), value) for idx, value in enumerate(stats) 
-            if not exclude_future or year(idx) <= LAST_YEAR]    
-        # past_stats = stats[0:last_year_index]
-        # last_to_future_stats = stats[last_year_index:10]
-        # past_result = []
-        # past_stats.reverse()
-        # for idx, value in enumerate(past_stats):
-        #     year = LAST_YEAR - idx - 1
-        #     past_result.insert(0, (year, value))
-
-        # result = []
-        # for idx, value in enumerate(last_to_future_stats):
-        #     year = LAST_YEAR + idx
-        #     result.append((year, value))
-
-        #return result
+            if not exclude_future or year(idx) <= LAST_YEAR]
 
     def __str__(self) -> str:
         return '{} : {}'.format(self['title'], self['code'])
