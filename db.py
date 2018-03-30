@@ -221,6 +221,7 @@ class Stock(UserDict):
             'code': code,
             'mean_roe': mean_roe,
             'roe_max_diff': roe_max_diff,
+            'roe_count': len(ROEs),
             'future_roe': future_roe,
             'future_bps': future_bps,
             'expected_rate': expected_rate,

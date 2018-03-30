@@ -19,11 +19,11 @@ def stocks(status=None):
     elif status == 'doubtful':
         find = {'doubtful': True}
     elif status == 'roe_max_diff_20':
-        find = {'roe_max_diff': {'$lt': 20}}
+        find = {'roe_max_diff': {'$lt': 20}, 'roe_count': {'$gte': 4}}
     elif status == 'roe_max_diff_10':
-        find = {'roe_max_diff': {'$lt': 10}}
+        find = {'roe_max_diff': {'$lt': 10}, 'roe_count': {'$gte': 4}}
     elif status == 'roe_max_diff_5':
-        find = {'roe_max_diff': {'$lt': 5}}
+        find = {'roe_max_diff': {'$lt': 5}, 'roe_count': {'$gte': 4}}
     order_by = request.args.get('order_by', 'expected_rate')
     ordering = request.args.get('ordering', 'desc')
     stocks = db.all_stocks(order_by=order_by, ordering=ordering, find=find)
