@@ -61,9 +61,6 @@
   <div class="ui fixed large inverted menu">
     <div class="ui container">
       <a href="{{ url_for('stocks') }}" class="header item">Snowball</a>
-      <a href="{{ url_for('stocks', status='roe_max_diff_20') }}" class="item">ROE차<=20</a>
-      <a href="{{ url_for('stocks', status='roe_max_diff_10') }}" class="item">ROE차<=10</a>
-      <a href="{{ url_for('stocks', status='roe_max_diff_5') }}" class="item">ROE차<=5</a>
       <a href="{{ url_for('stocks', status='owned') }}" class="item">보유</a>
       <a href="{{ url_for('stocks', status='starred') }}" class="item">관심</a>
       <a href="{{ url_for('stocks', status='starredorowned') }}" class="item">보유 | 관심</a>

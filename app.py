@@ -5,6 +5,7 @@ from scrapper import parse_snowball
 
 app = Flask(__name__)
 
+
 @app.route('/stocks')
 @app.route('/stocks/<status>')
 @app.route('/')
@@ -18,12 +19,6 @@ def stocks(status=None):
         find = {'$or': [{'starred': True}, {'owned': True}]}
     elif status == 'doubtful':
         find = {'doubtful': True}
-    elif status == 'roe_max_diff_20':
-        find = {'roe_max_diff': {'$lt': 20}, 'roe_count': {'$gte': 4}}
-    elif status == 'roe_max_diff_10':
-        find = {'roe_max_diff': {'$lt': 10}, 'roe_count': {'$gte': 4}}
-    elif status == 'roe_max_diff_5':
-        find = {'roe_max_diff': {'$lt': 5}, 'roe_count': {'$gte': 4}}
     order_by = request.args.get('order_by', 'expected_rate')
     ordering = request.args.get('ordering', 'desc')
     stocks = db.all_stocks(order_by=order_by, ordering=ordering, find=find)
@@ -74,7 +69,7 @@ def stock_clear_adjusted_future_pbr(code):
     return redirect(url_for('stock_refresh', code=code))
 
 
-@app.route('/stock/<code>/node', methods=['POST'])
+@app.route('/stock/<code>/note', methods=['POST'])
 def stock_update_note(code):
     if request.method == 'POST':
         stock = db.stock_by_code(code)

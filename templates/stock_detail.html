@@ -171,7 +171,7 @@ function lineChart(elementId, label, labels, data, color) {
                 <thead>
                     <tr>
                         <th>연도</th>
-                        <th>EPS {% if not stock.is_last_year_roe %}(작년EPS 없음){% endif %}</th>
+                        <th>EPS</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -213,7 +213,7 @@ function lineChart(elementId, label, labels, data, color) {
                 <thead>
                     <tr>
                         <th>연도</th>
-                        <th>PER {% if not stock.is_last_year_roe %}(작년 없음){% endif %}</th>
+                        <th>PER</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -252,7 +252,7 @@ function lineChart(elementId, label, labels, data, color) {
                 <thead>
                     <tr>
                         <th>연도</th>
-                        <th>PBR {% if not stock.is_last_year_roe %}(작년 없음){% endif %}</th>
+                        <th>PBR</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -382,7 +382,7 @@ function lineChart(elementId, label, labels, data, color) {
                 <thead>
                     <tr>
                         <th>연도</th>
-                        <th>ROE {% if not stock.is_last_year_roe %}(작년ROE 없음){% endif %}</th>
+                        <th>ROE</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -442,6 +442,30 @@ function lineChart(elementId, label, labels, data, color) {
                         <td>{{ fscore[1].total_issued_stock }}</td>
                         <td>{{ fscore[1].profitable }}</td>
                         <td>{{ fscore[1].cfo }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <table class="ui table">
+                <thead>
+                    <tr>
+                        <th>기록 날짜</th>
+                        <th>매수매도</th>
+                        <th>가격</th>
+                        <th>BPS</th>
+                        <th>fROE</th>
+                        <th>기대</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in stock.records %}
+                    <tr>
+                        <td>{{ record.date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ record.buy }}/{{ record.sell }}</td>
+                        <td>{{ record.current_price|round|int }}</td>
+                        <td>{{ record.bps }}</td>
+                        <td>{{ '%.2f'|format(record.future_roe) }}</td>
+                        <td>{{ '%.2f'|format(record.expected_rate) }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

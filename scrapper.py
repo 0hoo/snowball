@@ -113,19 +113,22 @@ def parse_snowball(code):
         return
     
     ROEs = [float(x.replace(',', '')) for x in ROEs]
-    is_last_year_roe = True
+    # is_last_year_roe = True
 
-    if len(ROEs) <= last_year_index:
-        is_last_year_roe = False
-        print('{last_year}년의 인덱스 {last_year_index}에 대한 ROE 정보가 없음: {ROEs}'.format
-          (last_year=LAST_YEAR, last_year_index=last_year_index, ROEs=ROEs))
-        last_four_years_roe = ROEs[len(ROEs)-4:len(ROEs)]
-    else:
-        last_four_years_roe = [ROEs[x] for x in range(last_year_index, last_year_index - 4, -1)]
-        last_four_years_roe.reverse()
+    # if len(ROEs) <= last_year_index:
+    #     is_last_year_roe = False
+    #     print('{last_year}년의 인덱스 {last_year_index}에 대한 ROE 정보가 없음: {ROEs}'.format
+    #       (last_year=LAST_YEAR, last_year_index=last_year_index, ROEs=ROEs))
+    #     last_four_years_roe = ROEs[len(ROEs)-4:len(ROEs)]
+    # else:
+    #     last_four_years_roe = [ROEs[x] for x in range(last_year_index, last_year_index - 4, -1)]
+    #     last_four_years_roe.reverse()
 
     EPSs = tree.xpath('/html/body/table/tbody/tr[26]/td/span/text()')
     EPSs = [parse_float(x) for x in EPSs]
+
+    PERs = tree.xpath('/html/body/table/tbody/tr[27]/td/span/text()')
+    PERs = [parse_float(x) for x in PERs]
 
     PBRs = tree.xpath('/html/body/table/tbody/tr[29]/td/span/text()')
     PBRs = [parse_float(x) for x in PBRs]
@@ -141,9 +144,6 @@ def parse_snowball(code):
     #영업활동현금흐름
     CFOs = tree.xpath('/html/body/table/tbody/tr[14]/td/span/text()')
     CFOs = [parse_int(x) for x in CFOs]
-
-    PERs = tree.xpath('/html/body/table/tbody/tr[27]/td/span/text()')
-    PERs = [parse_float(x) for x in PERs]
     
     #발행주식수
     TIs = tree.xpath('/html/body/table/tbody/tr[33]/td/span/text()')
@@ -154,8 +154,6 @@ def parse_snowball(code):
         'dividend_rate': dividend_rate,
         'bps': bps,
         'ROEs': ROEs,
-        'last_four_years_roe': last_four_years_roe,
-        'is_last_year_roe': is_last_year_roe,
         'last_year_index': last_year_index,
         'PBRs': PBRs,
         'EPSs': EPSs,
@@ -166,4 +164,4 @@ def parse_snowball(code):
         'TIs': TIs,
     }
     stock = db.save_stock(stock)
-    stock.fill_snowball_stat()
+    stock.save_record()

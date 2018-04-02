@@ -1,6 +1,7 @@
 from typing import Tuple, List
 
 from datetime import datetime
+from functools import partial
 from statistics import mean
 from collections import UserDict, namedtuple
 
@@ -28,6 +29,10 @@ class Stock(UserDict):
     @property
     def object_id(self) -> str:
         return self['_id']
+
+    @property
+    def current_price(self):
+        return self.get('current_price', 0)
 
     @property
     def price_arrow(self) -> str:
@@ -69,11 +74,17 @@ class Stock(UserDict):
 
     @property
     def low_pbr(self) -> float:
-        return min([year_pbr[1] for year_pbr in self.year_stat('PBRs', exclude_future=True)])
+        try:
+            return min([year_pbr[1] for year_pbr in self.year_stat('PBRs', exclude_future=True) if year_pbr[1] > 0])
+        except ValueError:
+            return 0
 
     @property
     def high_pbr(self) -> float:
-        return max([year_pbr[1] for year_pbr in self.year_stat('PBRs', exclude_future=True)])
+        try: 
+            return max([year_pbr[1] for year_pbr in self.year_stat('PBRs', exclude_future=True) if year_pbr[1] > 0])
+        except ValueError:
+            return 0
 
     @property
     def mid_pbr(self) -> float:
@@ -81,10 +92,7 @@ class Stock(UserDict):
     
     @property
     def adjusted_eps(self) -> int:
-        if (not ('EPSs' in self)) or len(self['EPSs']) < 3:
-            return 0
-        last_year_index = self['last_year_index']
-        past_eps = self['EPSs'][0:last_year_index+1]
+        past_eps = [eps[1] for eps in self.year_stat('EPSs', exclude_future=True)]
         if len(past_eps) < 3:
             return 0
         return int(((past_eps[-1] * 3) + (past_eps[-2] * 2) + past_eps[-3]) / 6)
@@ -96,7 +104,7 @@ class Stock(UserDict):
 
     @property
     def eps_growth(self) -> float:
-        EPSs = self.get('EPSs', [])
+        EPSs = self.get('EPSs', [0, 0])
         try:
             return mean([y/x - 1 for x, y in zip(EPSs[:-1], EPSs[1:])]) * 100
         except ZeroDivisionError:
@@ -108,10 +116,8 @@ class Stock(UserDict):
 
     @property
     def latest_fscore(self) -> int:
-        return sum([
-            self.get('fscore_total_issued_stock', 0), 
-            self.get('fscore_profitable', 0), 
-            self.get('fscore_cfo', 0)])
+        fscore = self.fscores[-1][1]
+        return sum([fscore.total_issued_stock + fscore.profitable + fscore.cfo])
 
     @property
     def fscores(self) -> List[Tuple[int, FScore]]:
@@ -124,16 +130,75 @@ class Stock(UserDict):
         return mean(PERs) if len(PERs) > 2 else 0
 
     @property
+    def dividend_tax_adjust(self) -> float:
+        return self.get('dividend_rate', 0) * (DIVIDEND_TAX_RATE / 100)
+
+    @property
+    def last_four_years_roe(self) -> List[int]:
+        return [roe[1] for roe in self.year_stat('ROEs') if roe[0] >= (LAST_YEAR - 3) and roe[0] <= LAST_YEAR]
+
+    @property
+    def mean_roe(self) -> float:
+        return mean(self.last_four_years_roe) if self.last_four_years_roe else 0
+
+    @property
+    def future_roe(self) -> float:
+        return self.mean_roe - self.dividend_tax_adjust     
+
+    @property
+    def expected_rate(self) -> float:
+        return self.calc_expected_rate(self.calc_future_bps, FUTURE)
+
+    @property
+    def invest_price(self) -> float:
+        future_bps = self.calc_future_bps(FUTURE)
+        return int(future_bps / ((1 + (1 * TARGET_RATE / 100)) ** FUTURE))
+
+    @property
+    def expected_rate_by_current_pbr(self) -> float:
+        return self.calc_expected_rate(self.calc_future_price_current_pbr, FUTURE)
+
+    @property
+    def expected_rate_by_low_pbr(self) -> float:
+        return self.calc_expected_rate(self.calc_future_price_low_pbr, FUTURE)
+
+    @property
+    def expected_rate_by_mid_pbr(self) -> float:
+        return self.calc_expected_rate(self.calc_future_price_low_current_mid_pbr, FUTURE)
+
+    @property
     def expected_rate_by_adjusted_future_pbr(self) -> float:
-        current_price = self.get('current_price', 0)
-        return ((self.calc_future_price_adjusted_future_pbr(FUTURE) / float(current_price)) ** (1.0 / FUTURE) - 1) * 100        
+        return self.calc_expected_rate(self.calc_future_price_adjusted_future_pbr, FUTURE)
+
+    @property
+    def intrinsic_value(self) -> int:
+        return int((self.get('bps', 0) + (self.adjusted_eps * 10)) / 2)
+
+    @property
+    def intrinsic_discount_rate(self) -> float:
+        return (self.intrinsic_value / self.current_price ** (1.0 / 1) - 1) * 100
+
+    @property
+    def peg_current_per(self) -> float:
+        return self.get('per', 0) / self.eps_growth if self.eps_growth != 0 else 0
+
+    @property
+    def peg_mean_per(self) -> float:
+        return self.mean_per / self.eps_growth if self.eps_growth != 0 else 0
+
+    @property
+    def roe_max_diff(self) -> float:
+        ROEs = self.get('ROEs', [])
+        return max(ROEs) - min(ROEs) if len(ROEs) > 2 else 0
 
     def calc_future_bps(self, future) -> int:
-        future_roe = self.get('future_roe', 0)
+        #TODO: future_roe가 마이너스 일 경우 future의 홀짝 여부에 따라 음수와 양수가 번갈아가며 나옴
+        #마이너스 future_roe는 이 계산에서 제외해야함
         bps = self.get('bps', 0)
         adjusted_future_roe = self.get('adjusted_future_roe', 0)
-        if adjusted_future_roe > 0:
-            future_roe = adjusted_future_roe
+        future_roe = adjusted_future_roe or self.future_roe
+        if future_roe < 0:
+            return 0
         return int(bps * ((1 + (1 * future_roe / 100)) ** future))
 
     def calc_future_price_low_pbr(self, future) -> int:
@@ -151,6 +216,9 @@ class Stock(UserDict):
     def calc_future_price_adjusted_future_pbr(self, future) -> int:
         return int(self.calc_future_bps(future) * self.get('adjusted_future_pbr', 0))
 
+    def calc_expected_rate(self, calc_bps, future):
+        return ((calc_bps(future) / self.current_price) ** (1.0 / future) - 1) * 100
+    
     def fscore(self, year) -> FScore:
         total_issued_stock = 0
         profitable = 0
@@ -170,89 +238,62 @@ class Stock(UserDict):
         
         return FScore(total_issued_stock=total_issued_stock, profitable=profitable, cfo=cfo)
 
-    def fill_snowball_stat(self):
-        code = self.get('code')
-        bps = self.get('bps', 0)
-        current_price = self.get('current_price', 0)
-        ROEs = self.get('ROEs')
-        if not ROEs:
-            print('기업정보 없는 종목: {}'.format(self.get('title')))
-            return
-        last_four_years_roe = self.get('last_four_years_roe')
-        dividend_rate = self.get('dividend_rate', 0)
-
-        #배당소득세 조정 배당률
-        tax_adjust = dividend_rate * (DIVIDEND_TAX_RATE / 100)
-        #4년 평균 ROE
-        mean_roe = mean(last_four_years_roe)
-        #ROE 최대 최소차
-        roe_max_diff = max(ROEs) - min(ROEs) if len(ROEs) > 2 else 0
-
-        #기대 ROE
-        future_roe = mean_roe - tax_adjust
-        self['future_roe'] = future_roe
-        #미래 BPS        
-        future_bps = self.calc_future_bps(FUTURE)
-        #연평균 기대수익률
-        expected_rate = ((future_bps / float(current_price)) ** (1.0 / FUTURE) - 1) * 100
-        #투자가능가격
-        invest_price = int(future_bps / ((1 + (1 * TARGET_RATE / 100)) ** FUTURE))
-
-        #최고/중간/최저PBR 기준 수익률
-        expected_rate_by_current_pbr = ((self.calc_future_price_current_pbr(FUTURE) / float(current_price)) ** (1.0 / FUTURE) - 1) * 100
-        expected_rate_by_mid_pbr = ((self.calc_future_price_low_current_mid_pbr(FUTURE) / float(current_price)) ** (1.0 / FUTURE) - 1) * 100
-        try:
-            expected_rate_by_low_pbr = float(((self.calc_future_price_low_pbr(FUTURE) / float(current_price)) ** (1.0 / FUTURE) - 1) * 100)
-        except:
-            expected_rate_by_low_pbr = 0
-
-        #숙향 내재가치와 할인률
-        intrinsic_value = int((bps + (self.adjusted_eps * 10)) / 2)
-        intrinsic_discount_rate = (intrinsic_value / current_price ** (1.0 / 1) - 1) * 100
-
-        #PEG
-        peg_current_per = self.get('per', 0) / self.eps_growth if self.eps_growth != 0 else 0
-        peg_mean_per = self.mean_per / self.eps_growth if self.eps_growth != 0 else 0
-
-        #최근 FScore
-        fscore = self.fscores[-1][1]
-
-        stock = {
-            'code': code,
-            'mean_roe': mean_roe,
-            'roe_max_diff': roe_max_diff,
-            'roe_count': len(ROEs),
-            'future_roe': future_roe,
-            'future_bps': future_bps,
-            'expected_rate': expected_rate,
-            'invest_price': invest_price,
-            'expected_rate_by_current_pbr': expected_rate_by_current_pbr,
-            'expected_rate_by_mid_pbr': expected_rate_by_mid_pbr,
-            'expected_rate_by_low_pbr': expected_rate_by_low_pbr,
-            'intrinsic_value': intrinsic_value,
-            'intrinsic_discount_rate': intrinsic_discount_rate,
-            'peg_current_per': peg_current_per,
-            'peg_mean_per': peg_mean_per,
-            'fscore_total_issued_stock': fscore.total_issued_stock,
-            'fscore_profitable': fscore.profitable,
-            'fscore_cfo': fscore.cfo,
-        }
-        save_stock(stock)
-
     def year_stat(self, stat, exclude_future=False) -> List[Tuple[int, int]]:
         stats = self.get(stat)
         if not stats:
             return [(0, 0)]
+        
         last_year_index = self.get('last_year_index')
+        assert(last_year_index is not None)
+        
         year = lambda idx: LAST_YEAR - (last_year_index - idx)
         return [(year(idx), value) for idx, value in enumerate(stats) 
             if not exclude_future or year(idx) <= LAST_YEAR]
 
+    def save_record(self):
+        starred = self.get('starred', False)
+        owned = self.get('owned', False)
+        today = datetime.today()
+        today = today.replace(hour=0, minute=0, second=0, microsecond=0)
+        if not starred and not owned:
+            return
+        record = {
+            'date': today,
+            'buy': 0,
+            'sell': 0,
+            'bps': self.get('bps', 0),
+            'current_price': self.current_price,
+            'future_roe': self.future_roe,
+            'roe': self.get('roe', 0),
+            'pbr': self.get('pbr', 0),
+            'expected_rate': self.expected_rate,
+        }
+        records = self.get('records', [])
+        print('records', records)
+        if len(records) > 0 and records[-1]['date'] == today:
+           records[-1] = record
+        else:
+           records.append(record)
+        save_stock({
+            'code': self.get('code'),
+            'records': records,
+        })
     def __str__(self) -> str:
         return '{} : {}'.format(self['title'], self['code'])
 
 
+def attr_or_key_getter(name, obj):
+    try:
+        return getattr(obj, name)
+    except AttributeError:
+        return obj.get(name, 0)
+
+
 def all_stocks(order_by='title', ordering='asc', find=None) -> List[Stock]:
+    dicts = db.stocks.find(find) if find else db.stocks.find()
+    return sorted([Stock(s) for s in dicts], key=partial(attr_or_key_getter, order_by), reverse=(ordering != 'asc'))
+
+def all_stocks_(order_by='title', ordering='asc', find=None) -> List[Stock]:
     if find:
         stocks = db.stocks.find(find).sort(order_by, ASCENDING if ordering == 'asc' else DESCENDING)
     else:
@@ -272,3 +313,8 @@ def save_stock(stock) -> Stock:
     else:
         db.stocks.insert_one(stock)
     return stock_by_code(stock['code'])
+
+
+def unset_keys(keys_to_unsets):
+    for key in keys_to_unsets:
+        db.stocks.update({}, {'$unset':{key: 1}}, multi=True)
