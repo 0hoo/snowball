@@ -57,20 +57,24 @@ class Stock(UserDict):
         return "http://companyinfo.stock.naver.com/v1/company/ajax/cF1001.aspx?cmp_cd=%s&fin_typ=0&freq_typ=Y" % (self['code'])
 
     @property
-    def roes(self) -> List[Tuple[int, int]]:
+    def roes(self) -> List[Tuple[int, int or None]]:
         return self.year_stat('ROEs')
 
     @property
-    def pbrs(self) -> List[Tuple[int, int]]:
+    def pbrs(self) -> List[Tuple[int, int or None]]:
         return self.year_stat('PBRs')
 
     @property
-    def pers(self) -> List[Tuple[int, int]]:
+    def pers(self) -> List[Tuple[int, int or None]]:
         return self.year_stat('PERs')
 
     @property
-    def epss(self) -> List[Tuple[int, int]]:
+    def epss(self) -> List[Tuple[int, int or None]]:
         return self.year_stat('EPSs')
+
+    @property
+    def countable_roes(self):
+        return [roe for roe in self.get('ROEs', []) if roe]
 
     @property
     def low_pbr(self) -> float:
@@ -99,7 +103,7 @@ class Stock(UserDict):
 
     @property
     def mid_roe(self) -> float:
-        ROEs = self.get('ROEs', [])
+        ROEs = self.countable_roes
         return mean([mean(ROEs), min(ROEs)]) if len(ROEs) > 2 else 0    
 
     @property
@@ -135,7 +139,7 @@ class Stock(UserDict):
 
     @property
     def last_four_years_roe(self) -> List[int]:
-        return [roe[1] for roe in self.year_stat('ROEs') if roe[0] >= (LAST_YEAR - 3) and roe[0] <= LAST_YEAR]
+        return [roe[1] for roe in self.year_stat('ROEs') if roe[1] and roe[0] >= (LAST_YEAR - 3) and roe[0] <= LAST_YEAR]
 
     @property
     def mean_roe(self) -> float:
@@ -188,7 +192,7 @@ class Stock(UserDict):
 
     @property
     def roe_max_diff(self) -> float:
-        ROEs = self.get('ROEs', [])
+        ROEs = self.countable_roes
         return max(ROEs) - min(ROEs) if len(ROEs) > 2 else 0
 
     def calc_future_bps(self, future) -> int:

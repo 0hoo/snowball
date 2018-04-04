@@ -391,7 +391,7 @@ function lineChart(elementId, label, labels, data, color) {
                         <td {% if loop.index0 == stock.last_year_index %}class="positive"{% endif %}>
                             {{roe.0}}
                         </td>
-                        <td {% if roe.1 < 5 %}class="warning"{% endif %}>
+                        <td {% if (roe.1 or 0) < 5 %}class="warning"{% endif %}>
                             {{roe.1}}
                         </td>
                     </tr>
@@ -401,7 +401,7 @@ function lineChart(elementId, label, labels, data, color) {
             <canvas id="roeChart" width="300" height="250"></canvas>
             <script>
                 var roeLabels = [{% for roe in stock.roes %}"{{ roe.0 }}",{% endfor %}];
-                var roeData = [{% for roe in stock.roes %}{{ roe.1 }},{% endfor %}];
+                var roeData = [{% for roe in stock.roes %}{{ roe.1 or 0 }},{% endfor %}];
                 lineChart("roeChart", 'ROE', roeLabels, roeData, window.chartColors.red);
             </script>
             <table class="ui definition table">

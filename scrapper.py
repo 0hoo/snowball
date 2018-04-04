@@ -85,6 +85,14 @@ def parse_basic(code):
     print()
 
 
+def first_or_none(iter):
+    return iter[0] if iter else None
+
+
+def float_or_none(x):
+    return None if not x else float(x.replace(',', ''))
+
+
 def parse_snowball(code):
     parse_basic(code)
     print('종목 {} 스노우볼...'.format(code))
@@ -107,12 +115,16 @@ def parse_snowball(code):
     except ValueError:
         return
 
-    ROEs = tree.xpath('/html/body/table/tbody/tr[22]/td/span/text()')
+    tds = tree.xpath('/html/body/table/tbody/tr[22]/td')
+    ROEs = [first_or_none(td.xpath('span/text()')) for td in tds]
+    while ROEs and ROEs[-1] is None:
+        ROEs.pop()
+    #ROEs = tree.xpath('/html/body/table/tbody/tr[22]/td/span/text()')
     if len(ROEs) == 0:
         print('*** ROE 정보가 없음 >>>')
         return
     
-    ROEs = [float(x.replace(',', '')) for x in ROEs]
+    ROEs = [float_or_none(x) for x in ROEs]
 
     EPSs = tree.xpath('/html/body/table/tbody/tr[26]/td/span/text()')
     EPSs = [parse_float(x) for x in EPSs]

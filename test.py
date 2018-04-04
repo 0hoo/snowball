@@ -71,6 +71,17 @@ class StockYearStatTest(unittest.TestCase):
         expected_roes = [(LAST_YEAR-2, 3.0), (LAST_YEAR-1, 5.0), (LAST_YEAR, 4.0), (LAST_YEAR+1, 10)]
         self.assertEqual(expected_roes, roes)
 
+    def test_countable_roe(self):
+        stock_dict = {
+            'code': '0001',
+            'ROEs': [3.0, 5.0, None, 10.0],
+            'last_year_index': 3,
+        }
+        stock = Stock(stock_dict)
+        self.assertEqual([(2014, 3.0), (2015, 5.0), (2016, None), (2017, 10)], stock.year_stat('ROEs'))
+        self.assertEqual([3.0, 5.0, 10.0], stock.countable_roes)
+        self.assertEqual(mean([3.0, 5.0, 10.0]), stock.mean_roe)
+
     def test_last_four_years_roe(self):
         stock_dict = {
             'code': '0001',
@@ -95,16 +106,6 @@ class StockYearStatTest(unittest.TestCase):
         last_four_years = stock.last_four_years_roe
         self.assertEqual(1, len(last_four_years))
         self.assertEqual([3.0], last_four_years)
-
-    def test_last_four_years_roe_no_last_year(self):
-        #TODO: LAST_YEAR가 2017년일 경우 2017년이 없을 수 있음. 하지만 2016년이 없는건 이상
-        stock_dict = {
-            'code': '0001',
-            'ROEs': [-8.17, 0.26, 15.06, 6.61],
-            'last_year_index': 5,
-        }
-        stock = Stock(stock_dict)
-        print(stock.last_four_years_roe)        
 
     def test_mean_roe(self):
         stock_dict = {
