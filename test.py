@@ -154,14 +154,13 @@ class StockYearStatTest(unittest.TestCase):
     def test_expected_rate(self):
         stock_dict = {
             'code': '0001',
+            'current_price': 1200,
             'bps': 1000,
             'ROEs': [11.0, 8.0, 15.0, 10.0],
             'last_year_index': 2,
             'dividend_rate': 4.5,
         }
         stock = Stock(stock_dict)
-        self.assertEqual(0, stock.expected_rate)
-        stock['current_price'] = 1200
         self.assertAlmostEqual(8.63, stock.expected_rate, places=1)
         stock['current_price'] = 1000
         self.assertAlmostEqual(10.63, stock.expected_rate, places=1)

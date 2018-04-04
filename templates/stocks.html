@@ -87,7 +87,6 @@
                 <th>
                     상태
                 </th>
-                <th>외부</th>
             </tr>
             </thead>
             <tbody>
@@ -127,11 +126,6 @@
                         {% if stock.doubtful %}
                         <i class="icon flag red"></i>
                         {% endif %}
-                    </td>
-                    <td>
-                        <a href="http://finance.daum.net/item/main.daum?code={{ stock.code }}" target="_blank">D</a> |
-                        <a href="http://finance.naver.com/item/main.nhn?code={{ stock.code }}" target="_blank">N</a> |
-                        <a href="{{ stock.financial_statements_url }}" target="_blank">배</a>
                     </td>
                 </tr>
                 {% endfor %}

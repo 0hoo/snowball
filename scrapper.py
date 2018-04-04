@@ -113,16 +113,6 @@ def parse_snowball(code):
         return
     
     ROEs = [float(x.replace(',', '')) for x in ROEs]
-    # is_last_year_roe = True
-
-    # if len(ROEs) <= last_year_index:
-    #     is_last_year_roe = False
-    #     print('{last_year}년의 인덱스 {last_year_index}에 대한 ROE 정보가 없음: {ROEs}'.format
-    #       (last_year=LAST_YEAR, last_year_index=last_year_index, ROEs=ROEs))
-    #     last_four_years_roe = ROEs[len(ROEs)-4:len(ROEs)]
-    # else:
-    #     last_four_years_roe = [ROEs[x] for x in range(last_year_index, last_year_index - 4, -1)]
-    #     last_four_years_roe.reverse()
 
     EPSs = tree.xpath('/html/body/table/tbody/tr[26]/td/span/text()')
     EPSs = [parse_float(x) for x in EPSs]
