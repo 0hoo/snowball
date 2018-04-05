@@ -21,7 +21,7 @@ def stocks(status=None):
         find = {'doubtful': True}
     order_by = request.args.get('order_by', 'expected_rate')
     ordering = request.args.get('ordering', 'desc')
-    stocks = db.all_stocks(order_by=order_by, ordering=ordering, find=find)
+    stocks = db.all_stocks(order_by=order_by, ordering=ordering, find=find, filter_bad=status!='bad')
     return render_template('stocks.html', stocks=stocks, order_by=order_by, ordering=ordering, status=status)
 
 

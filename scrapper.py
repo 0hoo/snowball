@@ -119,7 +119,6 @@ def parse_snowball(code):
     ROEs = [first_or_none(td.xpath('span/text()')) for td in tds]
     while ROEs and ROEs[-1] is None:
         ROEs.pop()
-    #ROEs = tree.xpath('/html/body/table/tbody/tr[22]/td/span/text()')
     if len(ROEs) == 0:
         print('*** ROE 정보가 없음 >>>')
         return

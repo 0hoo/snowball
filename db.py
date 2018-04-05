@@ -293,9 +293,13 @@ def attr_or_key_getter(name, obj):
         return obj.get(name, 0)
 
 
-def all_stocks(order_by='title', ordering='asc', find=None) -> List[Stock]:
+def all_stocks(order_by='title', ordering='asc', find=None, filter_bad=True) -> List[Stock]:
     dicts = db.stocks.find(find) if find else db.stocks.find()
-    return sorted([Stock(s) for s in dicts], key=partial(attr_or_key_getter, order_by), reverse=(ordering != 'asc'))
+    if filter_bad:
+        filter_func = lambda s: Stock(s).expected_rate > 0
+    else:
+        filter_func = lambda s: Stock(s).expected_rate < 0
+    return sorted([Stock(s) for s in dicts if filter_func(s)], key=partial(attr_or_key_getter, order_by), reverse=(ordering != 'asc'))
 
 def all_stocks_(order_by='title', ordering='asc', find=None) -> List[Stock]:
     if find:
