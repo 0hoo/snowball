@@ -110,7 +110,11 @@ class StockYearStatTest(unittest.TestCase):
             'ROEs': [3.0, 5.0, 4.0, 10.0],
             'last_year_index': 2,
         }
-        print(Stock(stock_dict).calculated_roe_count)
+        self.assertEqual(3, Stock(stock_dict).calculated_roe_count)
+        stock_dict['last_year_index'] = 3
+        self.assertEqual(4, Stock(stock_dict).calculated_roe_count)
+        stock_dict['last_year_index'] = 0
+        self.assertEqual(1, Stock(stock_dict).calculated_roe_count)
 
     def test_future_roe(self):
         stock_dict = {
@@ -174,6 +178,22 @@ class StockYearStatTest(unittest.TestCase):
         stock_dict['ROEs'] = [15.0, 18.0, 20.0, 22.0]        
         self.assertEqual(2133, Stock(stock_dict).invest_price)
 
+    def test_calculable_pbr_count(self):
+        stock_dict = {
+            'code': '0001',
+        }
+        self.assertEqual(0, Stock(stock_dict).calculable_pbr_count)     
+        stock_dict['PBRs'] = [1.0, 0.8]
+        stock_dict['last_year_index'] = 1
+        self.assertEqual(2, Stock(stock_dict).calculable_pbr_count)     
+        stock_dict['last_year_index'] = 0
+        self.assertEqual(1, Stock(stock_dict).calculable_pbr_count)     
+        stock_dict['PBRs'] = [1.0, 0.8, 2, 1.3]
+        stock_dict['last_year_index'] = 1
+        self.assertEqual(2, Stock(stock_dict).calculable_pbr_count)        
+        stock_dict['last_year_index'] = 3
+        self.assertEqual(4, Stock(stock_dict).calculable_pbr_count)        
+        
     def test_expected_rate_by_current_pbr(self):
         stock_dict = {
             'code': '0001',
