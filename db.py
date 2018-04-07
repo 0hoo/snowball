@@ -10,6 +10,8 @@ from cached_property import cached_property
 
 
 FScore = namedtuple('FScore', ['total_issued_stock', 'profitable', 'cfo'])
+YearStat = namedtuple('YearStat', ['year', 'value', 'calculated'])
+
 
 
 YEAR_STAT = Tuple[int, int]
@@ -38,25 +40,25 @@ class Stock(UserDict):
     def current_price(self):
         return self.get('current_price', 0)
 
-    @property
+    @cached_property
     def price_arrow(self) -> str:
         if self.get('price_diff') == 0:
             return ''
         else:
             return '▲' if self.get('price_diff') > 0 else '▼'
 
-    @property
+    @cached_property
     def price_color(self) -> str:
         if self.get('price_diff') == 0:
             return 'black'
         else:
             return 'red' if self.get('price_diff') > 0 else 'blue'
 
-    @property
+    @cached_property
     def price_sign(self) -> str:
         return '+' if self.get('price_diff') > 0 else ''
 
-    @property
+    @cached_property
     def financial_statements_url(self) -> str:
         return "http://companyinfo.stock.naver.com/v1/company/ajax/cF1001.aspx?cmp_cd=%s&fin_typ=0&freq_typ=Y" % (self['code'])
 
@@ -146,6 +148,10 @@ class Stock(UserDict):
         return [roe[1] for roe in self.year_stat('ROEs') if roe[1] and roe[0] >= (LAST_YEAR - 3) and roe[0] <= LAST_YEAR]
 
     @cached_property
+    def calculated_roe_count(self):
+        return len(self.last_four_years_roe)
+
+    @cached_property
     def mean_roe(self) -> float:
         return mean(self.last_four_years_roe) if self.last_four_years_roe else 0
 
@@ -194,7 +200,7 @@ class Stock(UserDict):
     def peg_mean_per(self) -> float:
         return self.mean_per / self.eps_growth if self.eps_growth != 0 else 0
 
-    @property
+    @cached_property
     def roe_max_diff(self) -> float:
         ROEs = self.countable_roes
         return max(ROEs) - min(ROEs) if len(ROEs) > 2 else 0

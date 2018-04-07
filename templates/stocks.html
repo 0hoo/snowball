@@ -101,7 +101,12 @@
                     <td>{{ '%.2f'|format(stock.dividend_rate or 0) }}</td>
                     <td>{{ (stock.bps or 0)|round|int or 0}}</td>
                     <td>
-                         <div class="ui label">{{ '%.2f'|format(stock.future_roe or 0) }}</div>
+                         <div class="ui label">
+                             {{ '%.2f'|format(stock.future_roe or 0) }}
+                             {% if stock.calculated_roe_count < 4 %}
+                             &nbsp; ({{stock.calculated_roe_count}}/4)
+                             {% endif %}
+                         </div>
                         {% if 'adjusted_future_roe' in stock and stock['adjusted_future_roe']|float > 0 %}
                             <div class="ui label yellow">{{ '%.2f'|format(stock.adjusted_future_roe or 0) }}</div>
                         {% endif %}
