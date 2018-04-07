@@ -274,6 +274,7 @@ function lineChart(elementId, label, labels, data, color) {
                 var pbrData = [{% for pbr in stock.pbrs %}{{ pbr.1 }},{% endfor %}];
                 lineChart("pbrChart", 'PBR', pbrLabels, pbrData, window.chartColors.green);
             </script>
+            {% if stock.calculable %}
             <table class="ui definition table">
                 <tbody>
                     <tr>
@@ -348,6 +349,7 @@ function lineChart(elementId, label, labels, data, color) {
                     </tr>
                 </tbody>
             </table>
+            {% endif %}
         </div>
         <div class="column">
             <table class="ui definition table">
@@ -358,7 +360,11 @@ function lineChart(elementId, label, labels, data, color) {
                     </tr>
                     <tr>
                         <td>fBPS</td>
-                        <td>{{ (stock.future_bps or 0)|round|int or 0 }}</td>
+                        <td>
+                            {% if stock.calculable %}
+                                {{ (stock.future_bps or 0)|round|int or 0 }}
+                            {% endif %}
+                        </td>
                     </tr>
                     <tr>
                         <td>fROE</td>
@@ -370,11 +376,19 @@ function lineChart(elementId, label, labels, data, color) {
                     </tr>
                     <tr>
                         <td>연간기대</td>
-                        <td {% if stock.expected_rate >= 15 %}class="positive"{% endif %}>{{ '%.2f'|format(stock.expected_rate or 0) }}</td>
+                        <td {% if stock.expected_rate >= 15 %}class="positive"{% endif %}>
+                            {% if stock.calculable %}
+                                {{ '%.2f'|format(stock.expected_rate or 0) }}
+                            {% endif %}
+                        </td>
                     </tr>
                     <tr>
                         <td>투자가능</td>
-                        <td>{{ (stock.invest_price or 0)|round|int or 0 }}</td>
+                        <td>
+                            {% if stock.calculable %}
+                                {{ (stock.invest_price or 0)|round|int or 0 }}
+                            {% endif %}
+                        </td>
                     </tr>
                 </tbody>
             </table>

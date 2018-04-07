@@ -199,14 +199,16 @@ class Stock(UserDict):
         ROEs = self.countable_roes
         return max(ROEs) - min(ROEs) if len(ROEs) > 2 else 0
 
+    @property
+    def calculable(self) -> bool:
+        return self.get('bps', 0) > 0 and (self.get('adjusted_future_roe', 0) or self.future_roe) > 0
+
     def calc_future_bps(self, future) -> int:
-        #TODO: future_roe가 마이너스 일 경우 future의 홀짝 여부에 따라 음수와 양수가 번갈아가며 나옴
-        #마이너스 future_roe는 이 계산에서 제외해야함
+        if not self.calculable:
+            return 0
         bps = self.get('bps', 0)
         adjusted_future_roe = self.get('adjusted_future_roe', 0)
         future_roe = adjusted_future_roe or self.future_roe
-        if future_roe < 0:
-            return 0
         return int(bps * ((1 + (1 * future_roe / 100)) ** future))
 
     def calc_future_price_low_pbr(self, future) -> int:
