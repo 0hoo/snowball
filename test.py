@@ -104,6 +104,14 @@ class StockYearStatTest(unittest.TestCase):
         stock_dict['last_year_index'] = 1
         self.assertEqual(mean([3.0, 5.0]), Stock(stock_dict).mean_roe)
 
+    def test_calculated_roe_count(self):
+        stock_dict = {
+            'code': '0001',
+            'ROEs': [3.0, 5.0, 4.0, 10.0],
+            'last_year_index': 2,
+        }
+        print(Stock(stock_dict).calculated_roe_count)
+
     def test_future_roe(self):
         stock_dict = {
             'code': '0001',
