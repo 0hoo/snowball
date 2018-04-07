@@ -278,6 +278,10 @@ function lineChart(elementId, label, labels, data, color) {
             <table class="ui definition table">
                 <tbody>
                     <tr>
+                        <td>과거 PBR</td>
+                        <td>{{ stock.calculable_pbr_count }}</td>
+                    </tr>
+                    <tr>
                         <td>현재PBR 기대수익률 ({{ '%.2f'|format(stock.pbr)}})</td>
                         <td {% if stock.low_pbr > stock.pbr %}class="positive"{% endif %}>{{'%.2f'|format(stock.expected_rate_by_current_pbr)}}</td>
                     </tr>

@@ -152,6 +152,10 @@ class Stock(UserDict):
         return len(self.last_four_years_roe)
 
     @cached_property
+    def calculable_pbr_count(self):
+        return len([pbr for pbr in self.year_stat('PBRs', exclude_future=True) if pbr[1] > 0])
+
+    @cached_property
     def mean_roe(self) -> float:
         return mean(self.last_four_years_roe) if self.last_four_years_roe else 0
 

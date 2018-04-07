@@ -135,7 +135,13 @@
                     </td>
                     <td>
                         {% if stock.calculable %}
+                            {% if stock.calculable_pbr_count < 4 %}
+                            <span class="ui label gray">
+                            {% endif %}
                             {{ '%.2f'|format(stock.expected_rate_by_low_pbr or 0) }}
+                            {% if stock.calculable_pbr_count < 4 %}
+                            </span>
+                            {% endif %}
                         {% endif %}
                     </td>
                     <td>{{ '%.2f'|format(stock.intrinsic_discount_rate or 0) }}</td>
