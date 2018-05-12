@@ -29,8 +29,10 @@ def fill_company():
             parse_snowball(code)
 
 
-def parse_snowball_all():
-    for stock in db.all_stocks():
+def parse_snowball_all(filter_bad=True):
+    stocks =  db.all_stocks(filter_bad=filter_bad)
+    print('{} 종목 수집'.format(len(stocks)))
+    for stock in stocks:
         if stock.get('code', None):
             parse_snowball(stock['code'])
             time.sleep(0.3)
