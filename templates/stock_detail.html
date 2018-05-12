@@ -374,7 +374,7 @@ function lineChart(elementId, label, labels, data, color) {
                         <td>fROE ({{stock.calculated_roe_count }}/4)</td>
                         <td>{{ '%.2f'|format(stock.future_roe or 0) }}
                             {% if 'adjusted_future_roe' in stock and stock['adjusted_future_roe']|float > 0 %}
-                             <div class="ui horizontal label yellow">사용자 입력 ROE 있음</div>
+                                <div class="ui horizontal label yellow">조정 ROE {{ stock['adjusted_future_roe'] }}</div>
                             {% endif %}
                         </td>
                     </tr>

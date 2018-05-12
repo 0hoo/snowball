@@ -6,10 +6,12 @@ import requests
 from lxml import html
 
 import db
+from db import Quarter
 
 DAUM_BASIC = 'http://finance.daum.net/item/main.daum?code='
 NAVER_COMPANY = 'http://companyinfo.stock.naver.com/v1/company/c1010001.aspx?cmp_cd='
 NAVER_YEARLY = "http://companyinfo.stock.naver.com/v1/company/ajax/cF1001.aspx?cmp_cd=%s&fin_typ=0&freq_typ=Y"
+NAVER_QUARTERLY = "http://companyinfo.stock.naver.com/v1/company/ajax/cF1001.aspx?cmp_cd=%s&fin_typ=0&freq_typ=Q"
 NAVER_YEARLY_JSON = "http://companyinfo.stock.naver.com/v1/company/cF3002.aspx?cmp_cd=%s&frq=0&rpt=0&finGubun=MAIN&frqTyp=0&cn="
 LAST_YEAR = str(datetime.now().year - 1)
 
@@ -92,6 +94,40 @@ def first_or_none(iter):
 def float_or_none(x):
     return None if not x else float(x.replace(',', ''))
 
+def quarter_from(text):
+    estimated = text.endswith('(E)')
+    text = text[:-3] if estimated else text
+    comp = text.split('/')
+    return Quarter(year=int(comp[0]), number=int(int(comp[1]) / 3), estimated=estimated)
+
+def parse_quarterly(code):
+    print('분기 {}'.format(code))
+    url = NAVER_QUARTERLY % (code)
+    tree = tree_from_url(url)
+
+    ths = tree.xpath("/html/body/table/thead/tr[2]/th")
+    quarters = [quarter_from(th.text.strip()) for th in ths]
+
+    tds = tree.xpath("/html/body/table/tbody/tr[22]/td")
+    ROEs = [first_or_none(td.xpath('span/text()')) for td in tds]
+
+    while ROEs and ROEs[-1] is None:
+        ROEs.pop()
+    
+    if len(ROEs) == 0:
+        print('*** 분기 ROE 정보가 없음 >>>')
+        return
+
+    ROEs = [float_or_none(x) for x in ROEs]
+    
+    QROEs = list(zip(quarters, ROEs))
+    stock = {
+        'code': code,
+        'QROEs': QROEs,
+    }
+    print(stock)
+    stock = db.save_stock(stock)
+    stock.save_record()
 
 def parse_snowball(code):
     parse_basic(code)
@@ -119,6 +155,7 @@ def parse_snowball(code):
     ROEs = [first_or_none(td.xpath('span/text()')) for td in tds]
     while ROEs and ROEs[-1] is None:
         ROEs.pop()
+    
     if len(ROEs) == 0:
         print('*** ROE 정보가 없음 >>>')
         return

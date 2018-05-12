@@ -324,6 +324,19 @@ class StockYearStatTest(unittest.TestCase):
         stock = Stock(stock_dict)
         self.assertEqual(6, stock.roe_max_diff)
 
+    def test_quarter_roes(self):
+        stock_dict = {
+            'code': '0001',
+            'QROEs': [
+                ((2016, 4, False), 12.5),
+                ((2017, 1, False), 15.5),
+                ((2017, 2, False), 17.0),
+                ((2017, 3, False), 11.3),
+                ((2017, 4, False), 10.9),
+            ]
+        }
+        stock = Stock(stock_dict)
+        print(stock.QROEs)
 
 if __name__ == '__main__':
     unittest.main()

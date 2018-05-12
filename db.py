@@ -11,7 +11,7 @@ from cached_property import cached_property
 
 FScore = namedtuple('FScore', ['total_issued_stock', 'profitable', 'cfo'])
 YearStat = namedtuple('YearStat', ['year', 'value', 'calculated'])
-
+Quarter = namedtuple('Quarter', ['year', 'number', 'estimated'])
 
 
 YEAR_STAT = Tuple[int, int]
@@ -209,9 +209,17 @@ class Stock(UserDict):
         ROEs = self.countable_roes
         return max(ROEs) - min(ROEs) if len(ROEs) > 2 else 0
 
+    @cached_property
+    def QROEs(self):
+        return [(Quarter(*qroe[0]), qroe[1]) for qroe in self.get('QROEs')]
+
     @property
     def calculable(self) -> bool:
         return self.get('bps', 0) > 0 and (self.get('adjusted_future_roe', 0) or self.future_roe) > 0
+
+    @cached_property
+    def future_bps(self) -> int:
+        return self.calc_future_bps(FUTURE)
 
     def calc_future_bps(self, future) -> int:
         if not self.calculable:
