@@ -90,6 +90,10 @@ def stock_clear_adjusted_future_roe(code):
 def stock_status(code, status, on):
     stock = db.stock_by_code(code)
     stock[status] = on == 'on'
+    if status == 'owned' and stock[status]:
+        stock['starred'] = False
+    elif status == 'starred' and stock[status]:
+        stock['owned'] = False
     db.save_stock(stock)
     return redirect(url_for('stock', code=code))
 
