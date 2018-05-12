@@ -1,3 +1,4 @@
+import csv
 import time
 from datetime import datetime
 from statistics import mean
@@ -14,6 +15,18 @@ NAVER_YEARLY = "http://companyinfo.stock.naver.com/v1/company/ajax/cF1001.aspx?c
 NAVER_QUARTERLY = "http://companyinfo.stock.naver.com/v1/company/ajax/cF1001.aspx?cmp_cd=%s&fin_typ=0&freq_typ=Q"
 NAVER_YEARLY_JSON = "http://companyinfo.stock.naver.com/v1/company/cF3002.aspx?cmp_cd=%s&frq=0&rpt=0&finGubun=MAIN&frqTyp=0&cn="
 LAST_YEAR = str(datetime.now().year - 1)
+
+
+def fill_company():
+    with open('company.csv', newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            code = row['구글코드']
+            if code.startswith('KRX:'):
+                code = code[4:]
+            elif code.startswith('KOSDAQ:'):
+                code = code[7:]
+            parse_snowball(code)
 
 
 def parse_snowball_all():
@@ -48,7 +61,7 @@ def parse_basic(code):
     
     tree = tree_from_url(url)
     if not tree.xpath('//*[@id="topWrap"]/div[1]/h2'):
-        return
+        return False
     
     title = tree.xpath('//*[@id="topWrap"]/div[1]/h2')[0].text
     price = parse_float(tree.xpath('//*[@id="topWrap"]/div[1]/ul[2]/li[1]/em')[0].text)
@@ -84,7 +97,7 @@ def parse_basic(code):
         'exchange': exchange
     }
     db.save_stock(stock)
-    print()
+    return True
 
 
 def first_or_none(iter):
@@ -130,7 +143,9 @@ def parse_quarterly(code):
     stock.save_record()
 
 def parse_snowball(code):
-    parse_basic(code)
+    if not parse_basic(code):
+        print('수집 실패')
+        return
     print('종목 {} 스노우볼...'.format(code))
     url = NAVER_COMPANY + code
     print('네이버 {}'.format(url))
