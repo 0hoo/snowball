@@ -326,14 +326,6 @@ def all_stocks(order_by='title', ordering='asc', find=None, filter_bad=True) -> 
     return sorted([Stock(s) for s in dicts if filter_func(s)], key=partial(attr_or_key_getter, order_by), reverse=(ordering != 'asc'))
 
 
-def all_stocks_(order_by='title', ordering='asc', find=None) -> List[Stock]:
-    if find:
-        stocks = db.stocks.find(find).sort(order_by, ASCENDING if ordering == 'asc' else DESCENDING)
-    else:
-        stocks = db.stocks.find().sort(order_by, ASCENDING if ordering == 'asc' else DESCENDING)
-    return [Stock(s) for s in stocks]
-
-
 def stock_by_code(code) -> Stock:
     return Stock(db.stocks.find_one({'code': code}))
 

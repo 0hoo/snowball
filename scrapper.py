@@ -1,5 +1,6 @@
 import csv
 import time
+import random
 from datetime import datetime
 from statistics import mean
 
@@ -18,6 +19,7 @@ LAST_YEAR = str(datetime.now().year - 1)
 
 
 def fill_company():
+    random.seed()
     with open('company.csv', newline='') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
@@ -27,15 +29,18 @@ def fill_company():
             elif code.startswith('KOSDAQ:'):
                 code = code[7:]
             parse_snowball(code)
+            time.sleep(random.random())
 
 
-def parse_snowball_all(filter_bad=True):
-    stocks =  db.all_stocks(filter_bad=filter_bad)
+def parse_snowball_stocks(filter_bad=True, only_starred_owned=False):
+    random.seed()
+    find = {'$or': [{'starred': True}, {'owned': True}]} if only_starred_owned else None
+    stocks =  db.all_stocks(find=find, filter_bad=filter_bad)
     print('{} 종목 수집'.format(len(stocks)))
     for stock in stocks:
         if stock.get('code', None):
             parse_snowball(stock['code'])
-            time.sleep(0.3)
+            time.sleep(random.random())
 
 
 def tree_from_url(url):
