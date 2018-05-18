@@ -43,24 +43,12 @@
                     {% if order_by == 'pbr' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
                 </th>
                 <th>
-                    <a href="{{ url_for('stocks', status=status) }}?order_by=dividend_rate&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">배당</a>
-                    {% if order_by == 'dividend_rate' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
-                </th>
-                <th>
-                    <a href="{{ url_for('stocks', status=status) }}?order_by=bps&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">BPS</a>
-                    {% if order_by == 'bps' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
-                </th>
-                <th>
                     <a href="{{ url_for('stocks', status=status) }}?order_by=future_roe&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">fROE</a>
                     {% if order_by == 'future_roe' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
                 </th>
                 <th>
                     <a href="{{ url_for('stocks', status=status) }}?order_by=expected_rate&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">기대</a>
                     {% if order_by == 'expected_rate' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
-                </th>
-                <th>
-                    <a href="{{ url_for('stocks', status=status) }}?order_by=invest_price&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">투자가</a>
-                    {% if order_by == 'invest_price' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
                 </th>
                 <th>
                     <a href="{{ url_for('stocks', status=status) }}?order_by=expected_rate_by_current_pbr&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">현P기</a>
@@ -85,7 +73,6 @@
                     {% if order_by == 'peg_current_per' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}                    
                 </th>
                 <th>
-                    상태
                 </th>
             </tr>
             </thead>
@@ -98,8 +85,6 @@
                     <td class="{{ stock.price_color }}">{{ stock.price_sign }}{{ '%.2f'|format(stock.rate_diff) }}%</td>
                     <td>{{ stock.per }}</td>
                     <td>{{ stock.pbr }}</td>
-                    <td>{{ '%.2f'|format(stock.dividend_rate or 0) }}</td>
-                    <td>{{ (stock.bps or 0)|round|int or 0}}</td>
                     <td>
                          <div class="ui label">
                              {{ '%.2f'|format(stock.future_roe or 0) }}
@@ -114,11 +99,6 @@
                     <td>
                         {% if stock.calculable %}
                             {{ '%.2f'|format(stock.expected_rate or 0) }}
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if stock.calculable %}
-                            {{ (stock.invest_price or 0)|round|int or 0 }}
                         {% endif %}
                     </td>
                     <td>
