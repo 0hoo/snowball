@@ -356,6 +356,16 @@ function lineChart(elementId, label, labels, data, color) {
             {% endif %}
         </div>
         <div class="column">
+            <form class="ui form" action="{{ url_for('stock_expected_rate_by_price', code=stock.code) }}" method="post">
+                <div class="field">
+                <label>기대수익률 계산</label>
+                    <input name="expected_rate_price" placeholder="가격" type="text" value="{{ expected_rate_price }}">
+                </div>
+                <button class="ui button" type="submit">계산</button>
+                {% if expected_rate_price %}
+                <div class="ui horizontal label green">기대수익률 {{ '%.2f'|format(stock.expected_rate_by_price(expected_rate_price)) }}%</div>
+                {% endif %}
+            </form>
             <table class="ui definition table">
                 <tbody>
                     <tr>
@@ -396,6 +406,30 @@ function lineChart(elementId, label, labels, data, color) {
                     </tr>
                 </tbody>
             </table>
+            <form class="ui form" action="{{ url_for('stock_my_price', code=stock.code) }}" method="post">
+                <div class="field">
+                <label>평균 단가</label>
+                    <input name="my_price" placeholder="평균 단가" type="text" value="{{ stock.my_price|int }}">
+                </div>
+                <button class="ui button" type="submit">입력</button>
+                <table class="ui table">
+                    <thead>
+                        <tr>
+                            <th>투자기간</th>
+                            <th><span class="ui green empty circular label"></span> 15% 수익가격</th>
+                        </tr>
+                    </thead>                    
+                    <tbody>
+                    {% for price in stock.ten_year_prices() %}
+                        <tr>
+                            <td>{{ price.0 }}년</td>
+                            <td>{{ price.1|int }}원</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                
+            </form>
             <table class="ui table">
                 <thead>
                     <tr>

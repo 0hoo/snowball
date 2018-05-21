@@ -43,6 +43,23 @@ def stock_refresh(code):
     return redirect(url_for('stock', code=code))
 
 
+@app.route('/stock/<code>/expected_rate', methods=['POST'])
+def stock_expected_rate_by_price(code):
+    if request.method == 'POST':
+        stock = db.stock_by_code(code)
+        expected_rate_price = float(request.form.get('expected_rate_price', 0))
+        return render_template('stock_detail.html', stock=stock, expected_rate_price=expected_rate_price)
+
+
+@app.route('/stock/<code>/my_price', methods=['POST'])
+def stock_my_price(code):
+    if request.method == 'POST':
+        stock = db.stock_by_code(code)
+        stock['my_price'] = float(request.form.get('my_price', 0))
+        db.save_stock(stock)
+        return redirect(url_for('stock_refresh', code=code))
+
+
 @app.route('/stock/<code>/adjust', methods=['POST'])
 def stock_adjusted_future_roe(code):
     if request.method == 'POST':

@@ -6,6 +6,8 @@
 .DS_Store
 .idea/
 .vscode/
+build/
+dist/
 schema-custom.json
 npm-debug.log
 localsettings.py

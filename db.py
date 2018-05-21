@@ -221,6 +221,9 @@ class Stock(UserDict):
     def future_bps(self) -> int:
         return self.calc_future_bps(FUTURE)
 
+    def expected_rate_by_price(self, price) -> float:
+        return self.calc_expected_rate(self.calc_future_bps, FUTURE, price=price)
+
     def calc_future_bps(self, future) -> int:
         if not self.calculable:
             return 0
@@ -244,8 +247,20 @@ class Stock(UserDict):
     def calc_future_price_adjusted_future_pbr(self, future) -> int:
         return int(self.calc_future_bps(future) * self.get('adjusted_future_pbr', 0))
 
-    def calc_expected_rate(self, calc_bps, future):
-        return ((calc_bps(future) / self.current_price) ** (1.0 / future) - 1) * 100
+    def calc_expected_rate(self, calc_bps, future, price=None):
+        if not price:
+            price = self.current_price
+        return ((calc_bps(future) / price) ** (1.0 / future) - 1) * 100
+
+    def ten_year_prices(self) -> List[Tuple[int, float]]:
+        price = self.get('my_price', 0)
+        if not price:
+            return []
+        prices = []
+        for i in range(1, 11):
+            price = price + (price * 0.15)
+            prices.append((i, price))
+        return prices
     
     def fscore(self, year) -> FScore:
         total_issued_stock = 0
