@@ -229,6 +229,28 @@ function lineChart(elementId, label, labels, data, color) {
                     {% endfor %}
                 </tbody>
             </table>
+            <table class="ui table">
+                    <thead>
+                        <tr>
+                            <th>연도</th>
+                            <th>FScore</th>
+                            <th>주식수</th>
+                            <th>흑자</th>
+                            <th>CFO</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fscore in stock.fscores %}
+                        <tr>
+                            <td>{{ fscore[0] }}</td>
+                            <td>{{ fscore[1].total_issued_stock + fscore[1].profitable + fscore[1].cfo }}</td>
+                            <td>{{ fscore[1].total_issued_stock }}</td>
+                            <td>{{ fscore[1].profitable }}</td>
+                            <td>{{ fscore[1].cfo }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
         </div>
         <div class="column">
             <div class="ui form">
@@ -279,7 +301,7 @@ function lineChart(elementId, label, labels, data, color) {
                 <tbody>
                     <tr>
                         <td>과거 PBR</td>
-                        <td>{{ stock.calculable_pbr_count }}</td>
+                        <td>{{ stock.calculable_pbr_count }}년</td>
                     </tr>
                     <tr>
                         <td>현재PBR 기대수익률 ({{ '%.2f'|format(stock.pbr)}})</td>
@@ -406,30 +428,6 @@ function lineChart(elementId, label, labels, data, color) {
                     </tr>
                 </tbody>
             </table>
-            <form class="ui form" action="{{ url_for('stock_my_price', code=stock.code) }}" method="post">
-                <div class="field">
-                <label>평균 단가</label>
-                    <input name="my_price" placeholder="평균 단가" type="text" value="{{ stock.my_price|int }}">
-                </div>
-                <button class="ui button" type="submit">입력</button>
-                <table class="ui table">
-                    <thead>
-                        <tr>
-                            <th>투자기간</th>
-                            <th><span class="ui green empty circular label"></span> 15% 수익가격</th>
-                        </tr>
-                    </thead>                    
-                    <tbody>
-                    {% for price in stock.ten_year_prices() %}
-                        <tr>
-                            <td>{{ price.0 }}년</td>
-                            <td>{{ price.1|int }}원</td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-                
-            </form>
             <table class="ui table">
                 <thead>
                     <tr>
@@ -476,52 +474,32 @@ function lineChart(elementId, label, labels, data, color) {
                 <button class="ui button" type="submit">저장</button>
                 <a href="{{ url_for('stock_clear_adjusted_future_roe', code=stock.code) }}" class="ui button">조정 ROE 삭제</a>
             </form>
-            <table class="ui table">
-                <thead>
-                    <tr>
-                        <th>연도</th>
-                        <th>FScore</th>
-                        <th>주식수</th>
-                        <th>흑자</th>
-                        <th>CFO</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for fscore in stock.fscores %}
-                    <tr>
-                        <td>{{ fscore[0] }}</td>
-                        <td>{{ fscore[1].total_issued_stock + fscore[1].profitable + fscore[1].cfo }}</td>
-                        <td>{{ fscore[1].total_issued_stock }}</td>
-                        <td>{{ fscore[1].profitable }}</td>
-                        <td>{{ fscore[1].cfo }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            <table class="ui table">
-                <thead>
-                    <tr>
-                        <th>기록 날짜</th>
-                        <th>매수매도</th>
-                        <th>가격</th>
-                        <th>BPS</th>
-                        <th>fROE</th>
-                        <th>기대</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for record in stock.records %}
-                    <tr>
-                        <td>{{ record.date.strftime('%Y-%m-%d') }}</td>
-                        <td>{{ record.buy }}/{{ record.sell }}</td>
-                        <td>{{ record.current_price|round|int }}</td>
-                        <td>{{ record.bps }}</td>
-                        <td>{{ '%.2f'|format(record.future_roe) }}</td>
-                        <td>{{ '%.2f'|format(record.expected_rate) }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div class="ui divider"></div>
+            <form class="ui form" action="{{ url_for('stock_my_price', code=stock.code) }}" method="post">
+                    <div class="field">
+                    <label>평균 단가</label>
+                        <input name="my_price" placeholder="평균 단가" type="text" {% if 'my_price' in stock %}value="{{ stock.my_price|int }}"{% endif %}>
+                    </div>
+                    <button class="ui button" type="submit">입력</button>
+                    {% if 'my_price' in stock %}
+                    <table class="ui table">
+                        <thead>
+                            <tr>
+                                <th>투자기간</th>
+                                <th><span class="ui green empty circular label"></span> 15% 수익가격 (배당수익포함)</th>
+                            </tr>
+                        </thead>                    
+                        <tbody>
+                        {% for price in stock.ten_year_prices() %}
+                            <tr>
+                                <td>{{ price.0 }}년</td>
+                                <td>{{ price.1|int }}원</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                    {% endif %}
+                </form>
         </div>
     </div>
 </div>
