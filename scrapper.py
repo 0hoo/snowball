@@ -20,7 +20,7 @@ LAST_YEAR = str(datetime.now().year - 1)
 
 def fill_company():
     random.seed()
-    with open('company.csv', newline='') as csvfile:
+    with open('company.csv', newline='', encoding='UTF8') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             code = row['구글코드']
