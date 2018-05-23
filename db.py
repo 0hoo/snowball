@@ -6,7 +6,6 @@ from statistics import mean
 from collections import UserDict, namedtuple
 
 from pymongo import MongoClient, ASCENDING, DESCENDING
-from cached_property import cached_property
 
 
 FScore = namedtuple('FScore', ['total_issued_stock', 'profitable', 'cfo'])
@@ -36,83 +35,83 @@ class Stock(UserDict):
     def object_id(self) -> str:
         return self['_id']
 
-    @cached_property
+    @property
     def current_price(self):
         return self.get('current_price', 0)
 
-    @cached_property
+    @property
     def price_arrow(self) -> str:
         if self.get('price_diff') == 0:
             return ''
         else:
             return '▲' if self.get('price_diff') > 0 else '▼'
 
-    @cached_property
+    @property
     def price_color(self) -> str:
         if self.get('price_diff') == 0:
             return 'black'
         else:
             return 'red' if self.get('price_diff') > 0 else 'blue'
 
-    @cached_property
+    @property
     def price_sign(self) -> str:
         return '+' if self.get('price_diff') > 0 else ''
 
-    @cached_property
+    @property
     def financial_statements_url(self) -> str:
         return "http://companyinfo.stock.naver.com/v1/company/ajax/cF1001.aspx?cmp_cd=%s&fin_typ=0&freq_typ=Y" % (self['code'])
 
-    @cached_property
+    @property
     def roes(self) -> List[Tuple[int, int or None]]:
         return self.year_stat('ROEs')
 
-    @cached_property
+    @property
     def pbrs(self) -> List[Tuple[int, int or None]]:
         return self.year_stat('PBRs')
 
-    @cached_property
+    @property
     def pers(self) -> List[Tuple[int, int or None]]:
         return self.year_stat('PERs')
     
-    @cached_property
+    @property
     def epss(self) -> List[Tuple[int, int or None]]:
         return self.year_stat('EPSs')
 
-    @cached_property
+    @property
     def countable_roes(self):
         return [roe for roe in self.get('ROEs', []) if roe]
 
-    @cached_property
+    @property
     def low_pbr(self) -> float:
         try:
             return min([year_pbr[1] for year_pbr in self.year_stat('PBRs', exclude_future=True) if year_pbr[1] > 0])
         except ValueError:
             return 0
 
-    @cached_property
+    @property
     def high_pbr(self) -> float:
         try: 
             return max([year_pbr[1] for year_pbr in self.year_stat('PBRs', exclude_future=True) if year_pbr[1] > 0])
         except ValueError:
             return 0
 
-    @cached_property
+    @property
     def mid_pbr(self) -> float:
         return (self.low_pbr + self.get('pbr')) / 2
     
-    @cached_property
+    @property
     def adjusted_eps(self) -> int:
         past_eps = [eps[1] for eps in self.year_stat('EPSs', exclude_future=True)]
         if len(past_eps) < 3:
             return 0
         return int(((past_eps[-1] * 3) + (past_eps[-2] * 2) + past_eps[-3]) / 6)
 
-    @cached_property
+    @property
     def mid_roe(self) -> float:
         ROEs = self.countable_roes
         return mean([mean(ROEs), min(ROEs)]) if len(ROEs) > 2 else 0    
 
-    @cached_property
+    @property
     def eps_growth(self) -> float:
         EPSs = self.get('EPSs', [0, 0])
         try:
@@ -134,82 +133,82 @@ class Stock(UserDict):
         NPs = self.year_stat('NPs')
         return [(np[0], self.fscore(np[0])) for np in NPs]
 
-    @cached_property
+    @property
     def mean_per(self) -> float:
         PERs = self.get('PERs', [])
         return mean(PERs) if len(PERs) > 2 else 0
 
-    @cached_property
+    @property
     def dividend_tax_adjust(self) -> float:
         return self.get('dividend_rate', 0) * (DIVIDEND_TAX_RATE / 100)
 
-    @cached_property
+    @property
     def last_four_years_roe(self) -> List[int]:
         return [roe[1] for roe in self.year_stat('ROEs') if roe[1] and roe[0] >= (LAST_YEAR - 3) and roe[0] <= LAST_YEAR]
 
-    @cached_property
+    @property
     def calculated_roe_count(self):
         return len(self.last_four_years_roe)
 
-    @cached_property
+    @property
     def calculable_pbr_count(self):
         return len([pbr for pbr in self.year_stat('PBRs', exclude_future=True) if pbr[1] > 0])
 
-    @cached_property
+    @property
     def mean_roe(self) -> float:
         return mean(self.last_four_years_roe) if self.last_four_years_roe else 0
 
-    @cached_property
+    @property
     def future_roe(self) -> float:
         return self.mean_roe - self.dividend_tax_adjust     
 
-    @cached_property
+    @property
     def expected_rate(self) -> float:
         return self.calc_expected_rate(self.calc_future_bps, FUTURE)
 
-    @cached_property
+    @property
     def invest_price(self) -> float:
         future_bps = self.calc_future_bps(FUTURE)
         return int(future_bps / ((1 + (1 * TARGET_RATE / 100)) ** FUTURE))
 
-    @cached_property
+    @property
     def expected_rate_by_current_pbr(self) -> float:
         return self.calc_expected_rate(self.calc_future_price_current_pbr, FUTURE)
 
-    @cached_property
+    @property
     def expected_rate_by_low_pbr(self) -> float:
         return self.calc_expected_rate(self.calc_future_price_low_pbr, FUTURE)
 
-    @cached_property
+    @property
     def expected_rate_by_mid_pbr(self) -> float:
         return self.calc_expected_rate(self.calc_future_price_low_current_mid_pbr, FUTURE)
 
-    @cached_property
+    @property
     def expected_rate_by_adjusted_future_pbr(self) -> float:
         return self.calc_expected_rate(self.calc_future_price_adjusted_future_pbr, FUTURE)
 
-    @cached_property
+    @property
     def intrinsic_value(self) -> int:
         return int((self.get('bps', 0) + (self.adjusted_eps * 10)) / 2)
 
-    @cached_property
+    @property
     def intrinsic_discount_rate(self) -> float:
         return (self.intrinsic_value / self.current_price ** (1.0 / 1) - 1) * 100
 
-    @cached_property
+    @property
     def peg_current_per(self) -> float:
         return self.get('per', 0) / self.eps_growth if self.eps_growth != 0 else 0
 
-    @cached_property
+    @property
     def peg_mean_per(self) -> float:
         return self.mean_per / self.eps_growth if self.eps_growth != 0 else 0
 
-    @cached_property
+    @property
     def roe_max_diff(self) -> float:
         ROEs = self.countable_roes
         return max(ROEs) - min(ROEs) if len(ROEs) > 2 else 0
 
-    @cached_property
+    @property
     def QROEs(self):
         return [(Quarter(*qroe[0]), qroe[1]) for qroe in self.get('QROEs')]
 
@@ -217,7 +216,7 @@ class Stock(UserDict):
     def calculable(self) -> bool:
         return self.get('bps', 0) > 0 and (self.get('adjusted_future_roe', 0) or self.future_roe) > 0
 
-    @cached_property
+    @property
     def future_bps(self) -> int:
         return self.calc_future_bps(FUTURE)
 
