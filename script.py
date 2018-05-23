@@ -9,6 +9,7 @@ parser.add_argument('--mysnowball', action='store_true', help='관심종목과 �
 parser.add_argument('--allsnowball', action='store_true', help='모든 기대수익률이 0이상인 종목의 스노우볼 정보를 가지고 온다')
 parser.add_argument('--allminus', action='store_true', help='기대수익률이 0이하인 종목의 스노우볼 정보를 가지고 온다')
 parser.add_argument('--fill', action='store_true', help='company.csv 파일에 있는 종목을 전부 추가한다')
+parser.add_argument('--sample', action='store_true', help='sample.csv 파일에 있는 종목을 추가한다')
 
 if __name__ == '__main__':
     args = parser.parse_args()
@@ -24,3 +25,5 @@ if __name__ == '__main__':
         scrapper.parse_snowball_stocks(filter_bad=False)
     elif args.fill:
         scrapper.fill_company()
+    elif args.sample:
+        scrapper.fill_company(filename='sample.csv')

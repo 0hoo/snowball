@@ -18,9 +18,9 @@ NAVER_YEARLY_JSON = "http://companyinfo.stock.naver.com/v1/company/cF3002.aspx?c
 LAST_YEAR = str(datetime.now().year - 1)
 
 
-def fill_company():
+def fill_company(filename='company.csv'):
     random.seed()
-    with open('company.csv', newline='', encoding='UTF8') as csvfile:
+    with open(filename, newline='', encoding='UTF8') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             code = row['구글코드']
