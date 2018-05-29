@@ -24,7 +24,8 @@ db = client.snowball
 DIVIDEND_TAX_RATE = 15.40
 FUTURE = 10
 TARGET_RATE = 15
-LAST_YEAR = datetime.now().year - 1
+THIS_YEAR = datetime.now().year
+LAST_YEAR = THIS_YEAR - 1
 
 
 class Stock(UserDict):
@@ -209,8 +210,16 @@ class Stock(UserDict):
         return max(ROEs) - min(ROEs) if len(ROEs) > 2 else 0
 
     @property
-    def QROEs(self):
-        return [(Quarter(*qroe[0]), qroe[1]) for qroe in self.get('QROEs')]
+    def this_year_QROEs(self):
+        return [(Quarter(*qroe[0]), qroe[1]) for qroe in self.get('QROEs', []) if qroe[0][0] == THIS_YEAR]
+
+    @property
+    def this_year_QBPSs(self):
+        return [(Quarter(*qbps[0]), qbps[1]) for qbps in self.get('QBPSs', []) if qbps[0][0] == THIS_YEAR]
+
+    @property
+    def this_year_QROEs_QBPSs(self):
+        return zip(self.this_year_QROEs, self.this_year_QBPSs)
 
     @property
     def calculable(self) -> bool:

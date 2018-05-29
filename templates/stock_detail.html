@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 
+{% block title %}
+{{ stock.title }} - Snowball
+{% endblock %}
+
 {% block content %}
 <script>
 window.chartColors = {
@@ -443,6 +447,33 @@ function lineChart(elementId, label, labels, data, color) {
                         </td>
                         <td {% if (roe.1 or 0) < 5 %}class="warning"{% endif %}>
                             {{roe.1}}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <table class="ui table">
+                <thead>
+                    <tr>
+                        <th>분기</th>
+                        <th>ROE</th>
+                        <th>BPS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for qroe, qbps in stock.this_year_QROEs_QBPSs %}
+                    <tr>
+                        <td>
+                            {{qroe.0.year}} / {{qroe.0.number}}
+                            {% if qroe.0.estimated %}
+                            (E)
+                            {% endif %}
+                        </td>
+                        <td>
+                            {{qroe.1}}
+                        </td>
+                        <td>
+                            {{qbps.1}}
                         </td>
                     </tr>
                     {% endfor %}

@@ -133,17 +133,23 @@ def parse_quarterly(code):
 
     while ROEs and ROEs[-1] is None:
         ROEs.pop()
-    
+
     if len(ROEs) == 0:
         print('*** 분기 ROE 정보가 없음 >>>')
         return
-
+    
     ROEs = [float_or_none(x) for x in ROEs]
+
+    tds = tree.xpath("/html/body/table/tbody/tr[28]/td")
+    BPSs = [first_or_none(td.xpath('span/text()')) for td in tds]
     
     QROEs = list(zip(quarters, ROEs))
+    QBPSs = list(zip(quarters, BPSs))
+
     stock = {
         'code': code,
         'QROEs': QROEs,
+        'QBPSs': QBPSs,
     }
     print(stock)
     stock = db.save_stock(stock)
@@ -233,3 +239,5 @@ def parse_snowball(code):
     }
     stock = db.save_stock(stock)
     stock.save_record()
+
+    parse_quarterly(code)
