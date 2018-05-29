@@ -184,11 +184,17 @@ def parse_snowball(code):
     
     ROEs = [float_or_none(x) for x in ROEs]
 
+    DEPTs = tree.xpath('/html/body/table/tbody/tr[24]/td/span/text()')
+    DEPTs = [parse_float(x) for x in DEPTs]
+
     EPSs = tree.xpath('/html/body/table/tbody/tr[26]/td/span/text()')
     EPSs = [parse_float(x) for x in EPSs]
 
     PERs = tree.xpath('/html/body/table/tbody/tr[27]/td/span/text()')
     PERs = [parse_float(x) for x in PERs]
+
+    BPSs = tree.xpath('/html/body/table/tbody/tr[28]/td/span/text()')
+    BPSs = [parse_int(x) for x in BPSs]
 
     PBRs = tree.xpath('/html/body/table/tbody/tr[29]/td/span/text()')
     PBRs = [parse_float(x) for x in PBRs]
@@ -222,6 +228,8 @@ def parse_snowball(code):
         'CFOs': CFOs,
         'PERs': PERs,
         'TIs': TIs,
+        'DEPTs': DEPTs,
+        'BPSs': BPSs,
     }
     stock = db.save_stock(stock)
     stock.save_record()

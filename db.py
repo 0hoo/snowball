@@ -220,6 +220,10 @@ class Stock(UserDict):
     def future_bps(self) -> int:
         return self.calc_future_bps(FUTURE)
 
+    @property
+    def bpss_and_depts(self):
+        return zip(self.year_stat('BPSs'), self.year_stat('DEPTs'))
+
     def expected_rate_by_price(self, price) -> float:
         return self.calc_expected_rate(self.calc_future_bps, FUTURE, price=price)
 

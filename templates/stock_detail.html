@@ -475,6 +475,31 @@ function lineChart(elementId, label, labels, data, color) {
                 <a href="{{ url_for('stock_clear_adjusted_future_roe', code=stock.code) }}" class="ui button">조정 ROE 삭제</a>
             </form>
             <div class="ui divider"></div>
+            <table class="ui table">
+                <thead>
+                    <tr>
+                        <th>연도</th>
+                        <th>BPS</th>
+                        <th>부채비율</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bps, dept in stock.bpss_and_depts %}
+                    <tr>
+                        <td {% if loop.index0 == stock.last_year_index %}class="positive"{% endif %}>
+                            {{bps.0}}
+                        </td>
+                        <td>
+                            {{bps.1}}
+                        </td>
+                        <td>
+                            {{dept.1}}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
             <form class="ui form" action="{{ url_for('stock_my_price', code=stock.code) }}" method="post">
                     <div class="field">
                     <label>평균 단가</label>
