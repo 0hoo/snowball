@@ -1,4 +1,7 @@
+import os
+
 from typing import Tuple, List, Optional, Dict
+
 from types import FunctionType
 
 from datetime import datetime
@@ -24,7 +27,9 @@ YEAR_STAT = Tuple[int, int]
 YEAR_FSCORE = Tuple[int, FScore]
 
 
-client = MongoClient()
+db_host = os.environ.get('DB_HOST', 'localhost')
+print(db_host)
+client = MongoClient(['{}:27017'.format(db_host)])
 db = client.snowball
 
 
