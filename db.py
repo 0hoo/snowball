@@ -210,16 +210,16 @@ class Stock(UserDict):
         return max(ROEs) - min(ROEs) if len(ROEs) > 2 else 0
 
     @property
-    def this_year_QROEs(self):
-        return [(Quarter(*qroe[0]), qroe[1]) for qroe in self.get('QROEs', []) if qroe[0][0] == THIS_YEAR]
+    def QROEs(self):
+        return [(Quarter(*qroe[0]), qroe[1]) for qroe in self.get('QROEs', [])]
 
     @property
-    def this_year_QBPSs(self):
-        return [(Quarter(*qbps[0]), qbps[1]) for qbps in self.get('QBPSs', []) if qbps[0][0] == THIS_YEAR]
+    def QBPSs(self):
+        return [(Quarter(*qbps[0]), qbps[1]) for qbps in self.get('QBPSs', [])]
 
     @property
-    def this_year_QROEs_QBPSs(self):
-        return zip(self.this_year_QROEs, self.this_year_QBPSs)
+    def QROEs_QBPSs(self):
+        return zip(self.QROEs, self.QBPSs)
 
     @property
     def calculable(self) -> bool:
@@ -230,8 +230,8 @@ class Stock(UserDict):
         return self.calc_future_bps(FUTURE)
 
     @property
-    def bpss_and_depts(self):
-        return zip(self.year_stat('BPSs'), self.year_stat('DEPTs'))
+    def other_year_stat(self):
+        return zip(self.year_stat('BPSs'), self.year_stat('DEPTs'), self.year_stat('CAPEXs'))
 
     def expected_rate_by_price(self, price) -> float:
         return self.calc_expected_rate(self.calc_future_bps, FUTURE, price=price)

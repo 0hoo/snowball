@@ -115,6 +115,8 @@ def float_or_none(x):
     return None if not x else float(x.replace(',', ''))
 
 def quarter_from(text):
+    if (not text) or ('/' not in text):
+        return None
     estimated = text.endswith('(E)')
     text = text[:-3] if estimated else text
     comp = text.split('/')
@@ -125,9 +127,6 @@ def parse_quarterly(code):
     url = NAVER_QUARTERLY % (code)
     tree = tree_from_url(url)
 
-    ths = tree.xpath("/html/body/table/thead/tr[2]/th")
-    quarters = [quarter_from(th.text.strip()) for th in ths]
-
     tds = tree.xpath("/html/body/table/tbody/tr[22]/td")
     ROEs = [first_or_none(td.xpath('span/text()')) for td in tds]
 
@@ -137,9 +136,10 @@ def parse_quarterly(code):
     if len(ROEs) == 0:
         print('*** 분기 ROE 정보가 없음 >>>')
         return
-    
-    ROEs = [float_or_none(x) for x in ROEs]
 
+    ths = tree.xpath("/html/body/table/thead/tr[2]/th")
+    quarters = [quarter_from(th.text.strip()) for th in ths]
+    
     tds = tree.xpath("/html/body/table/tbody/tr[28]/td")
     BPSs = [first_or_none(td.xpath('span/text()')) for td in tds]
     
@@ -187,6 +187,9 @@ def parse_snowball(code):
     if len(ROEs) == 0:
         print('*** ROE 정보가 없음 >>>')
         return
+
+    CAPEXs = tree.xpath('/html/body/table/tbody/tr[17]/td/span/text()')
+    CAPEXs = [parse_float(x) for x in CAPEXs]
     
     ROEs = [float_or_none(x) for x in ROEs]
 
@@ -236,6 +239,7 @@ def parse_snowball(code):
         'TIs': TIs,
         'DEPTs': DEPTs,
         'BPSs': BPSs,
+        'CAPEXs': CAPEXs,
     }
     stock = db.save_stock(stock)
     stock.save_record()

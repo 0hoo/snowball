@@ -461,7 +461,7 @@ function lineChart(elementId, label, labels, data, color) {
                     </tr>
                 </thead>
                 <tbody>
-                    {% for qroe, qbps in stock.this_year_QROEs_QBPSs %}
+                    {% for qroe, qbps in stock.QROEs_QBPSs %}
                     <tr>
                         <td>
                             {{qroe.0.year}} / {{qroe.0.number}}
@@ -512,10 +512,11 @@ function lineChart(elementId, label, labels, data, color) {
                         <th>연도</th>
                         <th>BPS</th>
                         <th>부채비율</th>
+                        <th>CAPEX</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for bps, dept in stock.bpss_and_depts %}
+                    {% for bps, dept, capex in stock.other_year_stat %}
                     <tr>
                         <td {% if loop.index0 == stock.last_year_index %}class="positive"{% endif %}>
                             {{bps.0}}
@@ -525,6 +526,9 @@ function lineChart(elementId, label, labels, data, color) {
                         </td>
                         <td>
                             {{dept.1}}
+                        </td>
+                        <td>
+                            {{capex.1|int}}
                         </td>
                     </tr>
                     {% endfor %}
