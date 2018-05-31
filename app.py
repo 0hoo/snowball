@@ -43,12 +43,14 @@ def stock_refresh(code):
     return redirect(url_for('stock', code=code))
 
 
-@app.route('/stock/<code>/expected_rate', methods=['POST'])
+@app.route('/stock/<code>/expected_rate')
 def stock_expected_rate_by_price(code):
-    if request.method == 'POST':
-        stock = db.stock_by_code(code)
-        expected_rate_price = float(request.form.get('expected_rate_price', 0))
-        return render_template('stock_detail.html', stock=stock, expected_rate_price=expected_rate_price)
+    stock = db.stock_by_code(code)
+    try:
+        expected_rate_price = float(request.args.get('price'))
+    except ValueError:
+        return redirect(url_for('stock', code=code))
+    return render_template('stock_detail.html', stock=stock, expected_rate_price=expected_rate_price)
 
 
 @app.route('/stock/<code>/my_price', methods=['POST'])

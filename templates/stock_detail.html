@@ -382,10 +382,10 @@ function lineChart(elementId, label, labels, data, color) {
             {% endif %}
         </div>
         <div class="column">
-            <form class="ui form" action="{{ url_for('stock_expected_rate_by_price', code=stock.code) }}" method="post">
+            <form class="ui form" action="{{ url_for('stock_expected_rate_by_price', code=stock.code) }}" method="get">
                 <div class="field">
                 <label>기대수익률 계산</label>
-                    <input name="expected_rate_price" placeholder="가격" type="text" value="{{ expected_rate_price }}">
+                    <input name="price" placeholder="가격" type="text" value="{{ expected_rate_price }}">
                 </div>
                 <button class="ui button" type="submit">계산</button>
                 {% if expected_rate_price %}
