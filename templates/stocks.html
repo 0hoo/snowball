@@ -1,6 +1,18 @@
 {% extends "base.html" %}
 
 {% block content %}
+<style>
+  #stocks-table thead tr:nth-child(1) {
+    padding-top:
+  }
+  #stocks-table thead tr:nth-child(1) th {
+    position: sticky;
+    top: 43px;
+    padding-top: 0.92857143em;
+    background-color: #F9FAFB;
+  }
+</style>
+
 <h3 class="ui header">
   <div class="content">
     Snowball
@@ -19,7 +31,7 @@
 </form>
 <div class="ui grid">
     <div class="sixteen wide column">
-        <table class="ui very basic compact table">
+        <table class="ui very basic compact table" id="stocks-table">
             <thead>
             <tr>
                 <th>종목코드</th>
