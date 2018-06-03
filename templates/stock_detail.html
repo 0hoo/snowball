@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 
+{% block title %}
+{{ stock.title }} - Snowball
+{% endblock %}
+
 {% block content %}
 <script>
 window.chartColors = {
@@ -378,10 +382,10 @@ function lineChart(elementId, label, labels, data, color) {
             {% endif %}
         </div>
         <div class="column">
-            <form class="ui form" action="{{ url_for('stock_expected_rate_by_price', code=stock.code) }}" method="post">
+            <form class="ui form" action="{{ url_for('stock_expected_rate_by_price', code=stock.code) }}" method="get">
                 <div class="field">
                 <label>기대수익률 계산</label>
-                    <input name="expected_rate_price" placeholder="가격" type="text" value="{{ expected_rate_price }}">
+                    <input name="price" placeholder="가격" type="text" value="{{ expected_rate_price }}">
                 </div>
                 <button class="ui button" type="submit">계산</button>
                 {% if expected_rate_price %}
@@ -448,6 +452,33 @@ function lineChart(elementId, label, labels, data, color) {
                     {% endfor %}
                 </tbody>
             </table>
+            <table class="ui table">
+                <thead>
+                    <tr>
+                        <th>분기</th>
+                        <th>ROE</th>
+                        <th>BPS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for qroe, qbps in stock.QROEs_QBPSs %}
+                    <tr>
+                        <td>
+                            {{qroe.0.year}} / {{qroe.0.number}}
+                            {% if qroe.0.estimated %}
+                            (E)
+                            {% endif %}
+                        </td>
+                        <td>
+                            {{qroe.1}}
+                        </td>
+                        <td>
+                            {{qbps.1}}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
             <canvas id="roeChart" width="300" height="250"></canvas>
             <script>
                 var roeLabels = [{% for roe in stock.roes %}"{{ roe.0 }}",{% endfor %}];
@@ -475,6 +506,35 @@ function lineChart(elementId, label, labels, data, color) {
                 <a href="{{ url_for('stock_clear_adjusted_future_roe', code=stock.code) }}" class="ui button">조정 ROE 삭제</a>
             </form>
             <div class="ui divider"></div>
+            <table class="ui table">
+                <thead>
+                    <tr>
+                        <th>연도</th>
+                        <th>BPS</th>
+                        <th>부채비율</th>
+                        <th>CAPEX</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bps, dept, capex in stock.other_year_stat %}
+                    <tr>
+                        <td {% if loop.index0 == stock.last_year_index %}class="positive"{% endif %}>
+                            {{bps.0}}
+                        </td>
+                        <td>
+                            {{bps.1}}
+                        </td>
+                        <td>
+                            {{dept.1}}
+                        </td>
+                        <td>
+                            {{capex.1|int}}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
             <form class="ui form" action="{{ url_for('stock_my_price', code=stock.code) }}" method="post">
                     <div class="field">
                     <label>평균 단가</label>

@@ -24,7 +24,8 @@ db = client.snowball
 DIVIDEND_TAX_RATE = 15.40
 FUTURE = 10
 TARGET_RATE = 15
-LAST_YEAR = datetime.now().year - 1
+THIS_YEAR = datetime.now().year
+LAST_YEAR = THIS_YEAR - 1
 
 
 class Stock(UserDict):
@@ -210,7 +211,15 @@ class Stock(UserDict):
 
     @property
     def QROEs(self):
-        return [(Quarter(*qroe[0]), qroe[1]) for qroe in self.get('QROEs')]
+        return [(Quarter(*qroe[0]), qroe[1]) for qroe in self.get('QROEs', [])]
+
+    @property
+    def QBPSs(self):
+        return [(Quarter(*qbps[0]), qbps[1]) for qbps in self.get('QBPSs', [])]
+
+    @property
+    def QROEs_QBPSs(self):
+        return zip(self.QROEs, self.QBPSs)
 
     @property
     def calculable(self) -> bool:
@@ -219,6 +228,10 @@ class Stock(UserDict):
     @property
     def future_bps(self) -> int:
         return self.calc_future_bps(FUTURE)
+
+    @property
+    def other_year_stat(self):
+        return zip(self.year_stat('BPSs'), self.year_stat('DEPTs'), self.year_stat('CAPEXs'))
 
     def expected_rate_by_price(self, price) -> float:
         return self.calc_expected_rate(self.calc_future_bps, FUTURE, price=price)
@@ -331,12 +344,12 @@ def attr_or_key_getter(name, obj):
         return obj.get(name, 0)
 
 
-def all_stocks(order_by='title', ordering='asc', find=None, filter_bad=True) -> List[Stock]:
+def all_stocks(order_by='title', ordering='asc', find=None, filter_by_expected_rate=True, filter_bad=True) -> List[Stock]:
     dicts = db.stocks.find(find) if find else db.stocks.find()
-    if filter_bad:
-        filter_func = lambda s: Stock(s).expected_rate > 0
+    if filter_by_expected_rate:
+        filter_func = lambda s: (Stock(s).expected_rate > 0 and filter_bad) or (Stock(s).expected_rate < 0 and not filter_bad)
     else:
-        filter_func = lambda s: Stock(s).expected_rate < 0
+        filter_func = lambda s: True
     return sorted([Stock(s) for s in dicts if filter_func(s)], key=partial(attr_or_key_getter, order_by), reverse=(ordering != 'asc'))
 
 

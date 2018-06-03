@@ -115,6 +115,8 @@ def float_or_none(x):
     return None if not x else float(x.replace(',', ''))
 
 def quarter_from(text):
+    if (not text) or ('/' not in text):
+        return None
     estimated = text.endswith('(E)')
     text = text[:-3] if estimated else text
     comp = text.split('/')
@@ -125,25 +127,29 @@ def parse_quarterly(code):
     url = NAVER_QUARTERLY % (code)
     tree = tree_from_url(url)
 
-    ths = tree.xpath("/html/body/table/thead/tr[2]/th")
-    quarters = [quarter_from(th.text.strip()) for th in ths]
-
     tds = tree.xpath("/html/body/table/tbody/tr[22]/td")
     ROEs = [first_or_none(td.xpath('span/text()')) for td in tds]
 
     while ROEs and ROEs[-1] is None:
         ROEs.pop()
-    
+
     if len(ROEs) == 0:
         print('*** 분기 ROE 정보가 없음 >>>')
         return
 
-    ROEs = [float_or_none(x) for x in ROEs]
+    ths = tree.xpath("/html/body/table/thead/tr[2]/th")
+    quarters = [quarter_from(th.text.strip()) for th in ths]
+    
+    tds = tree.xpath("/html/body/table/tbody/tr[28]/td")
+    BPSs = [first_or_none(td.xpath('span/text()')) for td in tds]
     
     QROEs = list(zip(quarters, ROEs))
+    QBPSs = list(zip(quarters, BPSs))
+
     stock = {
         'code': code,
         'QROEs': QROEs,
+        'QBPSs': QBPSs,
     }
     print(stock)
     stock = db.save_stock(stock)
@@ -181,14 +187,23 @@ def parse_snowball(code):
     if len(ROEs) == 0:
         print('*** ROE 정보가 없음 >>>')
         return
+
+    CAPEXs = tree.xpath('/html/body/table/tbody/tr[17]/td/span/text()')
+    CAPEXs = [parse_float(x) for x in CAPEXs]
     
     ROEs = [float_or_none(x) for x in ROEs]
+
+    DEPTs = tree.xpath('/html/body/table/tbody/tr[24]/td/span/text()')
+    DEPTs = [parse_float(x) for x in DEPTs]
 
     EPSs = tree.xpath('/html/body/table/tbody/tr[26]/td/span/text()')
     EPSs = [parse_float(x) for x in EPSs]
 
     PERs = tree.xpath('/html/body/table/tbody/tr[27]/td/span/text()')
     PERs = [parse_float(x) for x in PERs]
+
+    BPSs = tree.xpath('/html/body/table/tbody/tr[28]/td/span/text()')
+    BPSs = [parse_int(x) for x in BPSs]
 
     PBRs = tree.xpath('/html/body/table/tbody/tr[29]/td/span/text()')
     PBRs = [parse_float(x) for x in PBRs]
@@ -222,6 +237,11 @@ def parse_snowball(code):
         'CFOs': CFOs,
         'PERs': PERs,
         'TIs': TIs,
+        'DEPTs': DEPTs,
+        'BPSs': BPSs,
+        'CAPEXs': CAPEXs,
     }
     stock = db.save_stock(stock)
     stock.save_record()
+
+    parse_quarterly(code)
