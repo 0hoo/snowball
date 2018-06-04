@@ -24,11 +24,11 @@
             <tr>
                 <th>종목코드</th>
                 <th>
-                    <a href="{{ url_for('stocks') }}?order_by=title&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">종목명</a>
+                    <a href="{{ url_for('stocks', status=status) }}?order_by=title&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">종목명</a>
                     {% if order_by == 'title' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
                 </th>
                 <th>
-                    <a href="{{ url_for('stocks') }}?order_by=current_price&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">현재가</a>
+                    <a href="{{ url_for('stocks', status=status) }}?order_by=current_price&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">현재가</a>
                     {% if order_by == 'current_price' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
                 </th>
                 <th>

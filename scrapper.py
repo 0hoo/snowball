@@ -180,6 +180,7 @@ def parse_snowball(code):
         return
 
     tds = tree.xpath('/html/body/table/tbody/tr[22]/td')
+    
     ROEs = [first_or_none(td.xpath('span/text()')) for td in tds]
     while ROEs and ROEs[-1] is None:
         ROEs.pop()

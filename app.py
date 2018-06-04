@@ -11,6 +11,7 @@ app = Flask(__name__)
 @app.route('/')
 def stocks(status=None):
     find = None
+    filter_fscore = False
     if status == 'starred':
         find = {'starred': True}
     elif status == 'owned':
@@ -19,9 +20,16 @@ def stocks(status=None):
         find = {'$or': [{'starred': True}, {'owned': True}]}
     elif status == 'doubtful':
         find = {'doubtful': True}
+    elif status == 'fscore':
+        filter_fscore = True
+    print(filter_fscore)
     order_by = request.args.get('order_by', 'expected_rate')
     ordering = request.args.get('ordering', 'desc')
-    stocks = db.all_stocks(order_by=order_by, ordering=ordering, find=find, filter_by_expected_rate=find==None, filter_bad=status!='bad')
+    stocks = db.all_stocks(order_by=order_by, 
+        ordering=ordering, find=find, 
+        filter_by_expected_rate=find==None, 
+        filter_bad=status!='bad', 
+        filter_fscore=filter_fscore)
     return render_template('stocks.html', stocks=stocks, order_by=order_by, ordering=ordering, status=status)
 
 
