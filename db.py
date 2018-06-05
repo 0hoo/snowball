@@ -1,16 +1,19 @@
 from typing import Tuple, List
+from types import FunctionType
 
 from datetime import datetime
 from functools import partial
+from itertools import repeat
 from statistics import mean
 from collections import UserDict, namedtuple
 
 from pymongo import MongoClient, ASCENDING, DESCENDING
-
+from bson.objectid import ObjectId
 
 FScore = namedtuple('FScore', ['total_issued_stock', 'profitable', 'cfo'])
 YearStat = namedtuple('YearStat', ['year', 'value', 'calculated'])
 Quarter = namedtuple('Quarter', ['year', 'number', 'estimated'])
+FilterOption = namedtuple('Filter', ['key', 'title', 'morethan', 'value'])
 
 
 YEAR_STAT = Tuple[int, int]
@@ -26,6 +29,23 @@ FUTURE = 10
 TARGET_RATE = 15
 THIS_YEAR = datetime.now().year
 LAST_YEAR = THIS_YEAR - 1
+
+
+available_filter_options = [
+    FilterOption(key='expected_rate', title='기대수익률', morethan=None, value=None),
+    FilterOption(key='latest_fscore', title='FScore', morethan=None, value=None),
+    FilterOption(key='future_roe', title='fROE', morethan=None, value=None),
+    FilterOption(key='expected_rate_by_current_pbr', title='현P기대수익률', morethan=None, value=None),
+    FilterOption(key='expected_rate_by_low_pbr', title='저P기대수익률', morethan=None, value=None),
+    FilterOption(key='pbr', title='PBR', morethan=None, value=None),
+    FilterOption(key='per', title='PER', morethan=None, value=None),
+]
+
+
+class Filter(UserDict):
+    @property
+    def filter_options(self):
+        return [FilterOption(key=o['key'], title=o['title'], morethan=o['morethan'], value=o['value']) for o in self['options']]
 
 
 class Stock(UserDict):
@@ -57,6 +77,14 @@ class Stock(UserDict):
     @property
     def price_sign(self) -> str:
         return '+' if self.get('price_diff') > 0 else ''
+
+    @property
+    def pbr(self):
+        return self.get('pbr')
+
+    @property
+    def per(self):
+        return self.get('per')
 
     @property
     def financial_statements_url(self) -> str:
@@ -342,19 +370,32 @@ def attr_or_key_getter(name, obj):
         return getattr(obj, name)
     except AttributeError:
         return obj.get(name, 0)
+    
+
+def make_filter_option_func(filter_option):
+    def filter_option_func(s):
+        v = getattr(Stock(s), filter_option.key)
+        return v >= filter_option.value if filter_option.morethan else v <= filter_option.value
+    return filter_option_func
 
 
-def all_stocks(order_by='title', ordering='asc', find=None, filter_by_expected_rate=True, filter_bad=True, filter_fscore=False) -> List[Stock]:
+def all_stocks(order_by='title', ordering='asc', find=None, filter_by_expected_rate=True, filter_bad=True, filter_fscore=False, filter_options=[]) -> List[Stock]:
     dicts = db.stocks.find(find) if find else db.stocks.find()
-    filter_by_expected_rate_func = lambda s: True
+
+    filter_funcs = []
+
     if filter_by_expected_rate:
         filter_by_expected_rate_func = lambda s: (Stock(s).expected_rate > 0 and filter_bad) or (Stock(s).expected_rate < 0 and not filter_bad)
+        filter_funcs.append(filter_by_expected_rate_func)
     
-    filter_func = filter_by_expected_rate_func
     if filter_fscore:
-        filter_func = lambda s: (Stock(s).latest_fscore == 3) and filter_by_expected_rate_func(s)
-        
-    return sorted([Stock(s) for s in dicts if filter_func(s)], key=partial(attr_or_key_getter, order_by), reverse=(ordering != 'asc'))
+        filter_funcs.append(lambda s: (Stock(s).latest_fscore == 3) and filter_by_expected_rate_func(s))
+
+    for filter_option in filter_options:
+        filter_funcs.append(make_filter_option_func(filter_option))
+
+    return sorted([Stock(s) for s in dicts if all(list(map(FunctionType.__call__, filter_funcs, repeat(s))))],
+        key=partial(attr_or_key_getter, order_by), reverse=(ordering != 'asc'))
 
 
 def stock_by_code(code) -> Stock:
@@ -374,3 +415,24 @@ def save_stock(stock) -> Stock:
 def unset_keys(keys_to_unsets):
     for key in keys_to_unsets:
         db.stocks.update({}, {'$unset':{key: 1}}, multi=True)
+
+
+def all_filters():
+    dicts = db.filters.find()
+    return [Filter(f) for f in dicts]
+
+
+def filter_by_id(filter_id) -> Filter:
+    return Filter(db.filters.find_one({'_id': ObjectId(filter_id)}))
+
+
+def save_filter(filter):
+    filter_id = filter.get('_id', None)
+    if filter_id:
+        return db.filters.update_one({'_id': ObjectId(filter_id)}, {'$set': filter}).upserted_id
+    else:
+        return db.filters.insert_one(filter).inserted_id
+
+
+def remove_filter(filter_id):
+    db.filters.delete_one({'_id': ObjectId(filter_id)})

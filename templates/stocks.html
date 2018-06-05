@@ -1,11 +1,13 @@
 {% extends "base.html" %}
 
 {% block content %}
+
+{% if not current_filter %}
 <h3 class="ui header">
-  <div class="content">
-    Snowball
-    <div class="sub header">{{ stocks|count }}종목</div>
-  </div>
+    <div class="content">
+        Snowball
+        <div class="sub header">{{ stocks|count }}종목</div>
+    </div>
 </h3>
 <form class="ui form" action="{{ url_for('add_stock') }}" method="post">
     <div class="fields">
@@ -17,6 +19,65 @@
         </div>
     </div>
 </form>
+{% endif %}
+{% if current_filter %}
+<div class="ui segment">
+    <form class="ui form" action="{{ url_for('stocks_save_filter', filter_id=current_filter._id) }}" method="POST">
+        <input type="hidden" name="current_filter_id" value="{{ current_filter._id }}">
+        <div class="fields">
+            <div class="six wide field">
+                <label>필터명</label>
+                <input type="text" placeholder="필터명" name="filter_name" value="{{ current_filter.name }}">
+            </div>
+            <div class="four wide field">
+                <label>&nbsp;</label>
+                <button class="ui button" type="submit">필터명 변경</button>
+                <a class="ui button red" href="{{ url_for('stocks_remove_filter', filter_id=current_filter._id) }}">필터 삭제</a>
+            </div>
+        </div>
+    </form>
+    <div class="ui list">
+        {% for filter_option in current_filter.options %}
+        <span class="ui label black">
+            {{ filter_option.title }} 
+            {{ filter_option.value }}
+            <b>{% if filter_option.morethan %}
+                이상
+            {% else %}
+                이하
+            {% endif %}
+            </b> | 
+            <a href="{{ url_for('stocks_remove_filter_option', filter_id=current_filter._id, filter_option_id=filter_option._id) }}">제거</a>
+        </span>
+        {% endfor %}
+    </div>
+    <form class="ui form" action="{{ url_for('stocks_add_filter_option', filter_id=current_filter._id) }}" method="POST">
+        <div class="four fields">
+            <div class="field">
+                <select class="ui fluid dropdown" name="filter_option_key">
+                    {% for filter_option in available_filter_options %}
+                    <option value="{{ filter_option.key }}">{{ filter_option.title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <input type="number" name="filter_option_value" placeholder="값">
+            </div>
+            <div class="field">
+                <select class="ui fluid dropdown" name="filter_option_morethan">
+                    <option value="morethan">이상</option>
+                    <option value="lessthan">이하</option>
+                </select>
+            </div>
+            <div class="field">
+                <button class="ui button" type="submit">필터링 옵션 추가</button>
+            </div>
+        </div>
+        <div>{{ stocks|count }}종목</div>
+    </form>
+</div>
+<br>
+{% endif %}
 <div class="ui grid">
     <div class="sixteen wide column">
         <table class="ui very basic compact table">
