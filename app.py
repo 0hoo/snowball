@@ -74,6 +74,7 @@ def stocks_remove_filter(filter_id):
 @app.route('/stocks/filter/<filter_id>/add_filter_option', methods=['POST'])
 def stocks_add_filter_option(filter_id):
     if request.method == 'POST':
+        name = request.form.get('filter_name')
         key = request.form.get('filter_option_key')
         morethan = request.form.get('filter_option_morethan')
         morethan = True if morethan == 'morethan' else False
@@ -87,6 +88,7 @@ def stocks_add_filter_option(filter_id):
         filter_option_dict['_id'] = ObjectId()
         options.append(filter_option_dict)
         current_filter['options'] = options
+        current_filter['name'] = name
         db.save_filter(current_filter)
 
         return redirect(url_for('stocks', filter_id=current_filter['_id']))

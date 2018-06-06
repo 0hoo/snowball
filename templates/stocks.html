@@ -1,7 +1,16 @@
 {% extends "base.html" %}
 
-{% block content %}
+{% block javascript %}
+    $(document).ready(function() {
+        $('#filter_name').keyup(function() {
+            var value = $(this).val();
+            console.log(value);
+            $('#hidden_filter_name').val(value);
+        });    
+    });
+{% endblock %}
 
+{% block content %}
 {% if not current_filter %}
 <h3 class="ui header">
     <div class="content">
@@ -27,7 +36,7 @@
         <div class="fields">
             <div class="six wide field">
                 <label>필터명</label>
-                <input type="text" placeholder="필터명" name="filter_name" value="{{ current_filter.name }}">
+                <input type="text" id="filter_name" placeholder="필터명" name="filter_name" value="{{ current_filter.name }}">
             </div>
             <div class="four wide field">
                 <label>&nbsp;</label>
@@ -52,6 +61,7 @@
         {% endfor %}
     </div>
     <form class="ui form" action="{{ url_for('stocks_add_filter_option', filter_id=current_filter._id) }}" method="POST">
+        <input type="hidden" id="hidden_filter_name" name="filter_name" value="{{ current_filter.name }}">
         <div class="four fields">
             <div class="field">
                 <select class="ui fluid dropdown" name="filter_option_key">
