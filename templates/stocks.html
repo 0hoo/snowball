@@ -6,7 +6,17 @@
             var value = $(this).val();
             console.log(value);
             $('#hidden_filter_name').val(value);
-        });    
+        });
+        $('#select_filter_option').change(function() {
+            var selected = $('#select_filter_option option:selected').text();
+            if (selected.endsWith('(참)')) {
+                console.log('!!');
+                $('#filter_option_value').prop('disabled', true);
+            } else {
+                $('#filter_option_value').prop('disabled', false);
+            }
+            console.log(selected);
+        }); 
     });
 {% endblock %}
 
@@ -58,12 +68,14 @@
     <div class="ui list">
         {% for filter_option in current_filter.options %}
         <span class="ui label black">
-            {{ filter_option.title }} 
-            {{ filter_option.value }}
-            <b>{% if filter_option.morethan %}
-                이상
-            {% else %}
-                이하
+            {{ filter_option.title }}
+            {% if not filter_option.is_boolean %} 
+                {{ filter_option.value }}
+                <b>{% if filter_option.morethan %}
+                    이상
+                {% else %}
+                    이하
+                {% endif %}
             {% endif %}
             </b> | 
             <a href="{{ url_for('stocks_remove_filter_option', filter_id=current_filter._id, filter_option_id=filter_option._id) }}">제거</a>
@@ -74,17 +86,17 @@
         <input type="hidden" id="hidden_filter_name" name="filter_name" value="{{ current_filter.name }}">
         <div class="four fields">
             <div class="field">
-                <select class="ui fluid dropdown" name="filter_option_key">
+                <select class="ui fluid dropdown" name="filter_option_key" id="select_filter_option">
                     {% for filter_option in available_filter_options %}
                     <option value="{{ filter_option.key }}">{{ filter_option.title }}</option>
                     {% endfor %}
                 </select>
             </div>
             <div class="field">
-                <input type="number" name="filter_option_value" placeholder="값">
+                <input type="number" name="filter_option_value" id="filter_option_value" placeholder="값">
             </div>
             <div class="field">
-                <select class="ui fluid dropdown" name="filter_option_morethan">
+                <select class="ui fluid dropdown" name="filter_option_morethan" id="filter_option_morethan">
                     <option value="morethan">이상</option>
                     <option value="lessthan">이하</option>
                 </select>
@@ -177,7 +189,7 @@
                     </td>
                     <td>
                         {% if stock.calculable %}
-                            {% if stock.low_pbr > stock.pbr %}<span class="ui label black">{% endif %}
+                            {% if stock.is_five_years_record_low %}<span class="ui label black">{% endif %}
                             {{ '%.2f'|format(stock.expected_rate_by_current_pbr or 0) }}
                             {% if stock.low_pbr > stock.pbr %}</span>{% endif %}
                         {% endif %}

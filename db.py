@@ -13,7 +13,7 @@ from bson.objectid import ObjectId
 FScore = namedtuple('FScore', ['total_issued_stock', 'profitable', 'cfo'])
 YearStat = namedtuple('YearStat', ['year', 'value', 'calculated'])
 Quarter = namedtuple('Quarter', ['year', 'number', 'estimated'])
-FilterOption = namedtuple('Filter', ['key', 'title', 'morethan', 'value'])
+FilterOption = namedtuple('Filter', ['key', 'title', 'morethan', 'value', 'is_boolean'])
 
 
 YEAR_STAT = Tuple[int, int]
@@ -32,20 +32,30 @@ LAST_YEAR = THIS_YEAR - 1
 
 
 available_filter_options = [
-    FilterOption(key='expected_rate', title='기대수익률', morethan=None, value=None),
-    FilterOption(key='latest_fscore', title='FScore', morethan=None, value=None),
-    FilterOption(key='future_roe', title='fROE', morethan=None, value=None),
-    FilterOption(key='expected_rate_by_current_pbr', title='현P기대수익률', morethan=None, value=None),
-    FilterOption(key='expected_rate_by_low_pbr', title='저P기대수익률', morethan=None, value=None),
-    FilterOption(key='pbr', title='PBR', morethan=None, value=None),
-    FilterOption(key='per', title='PER', morethan=None, value=None),
+    FilterOption(key='expected_rate', title='기대수익률', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='latest_fscore', title='FScore', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='future_roe', title='fROE', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='expected_rate_by_current_pbr', title='현P기대수익률', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='expected_rate_by_low_pbr', title='저P기대수익률', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='pbr', title='PBR', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='per', title='PER', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='countable_last_four_years_roes_count', title='계산가능ROE수', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='roe_max_diff', title='ROE최대최소차', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='last_four_years_roe_max_diff', title='최근4년ROE최대최소차', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='calculable_pbr_count', title='계산가능PBR수', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='is_five_years_record_low', title='5년최저PBR(참)', morethan=None, value=None, is_boolean=True),
 ]
 
 
 class Filter(UserDict):
     @property
     def filter_options(self):
-        return [FilterOption(key=o['key'], title=o['title'], morethan=o['morethan'], value=o['value']) for o in self['options']]
+        return [FilterOption(
+            key=o['key'], 
+            title=o['title'], 
+            morethan=o['morethan'], 
+            value=o['value'], 
+            is_boolean=o.get('is_boolean', False)) for o in self['options']]
 
 
 class Stock(UserDict):
@@ -109,6 +119,10 @@ class Stock(UserDict):
     @property
     def countable_roes(self):
         return [roe for roe in self.get('ROEs', []) if roe]
+
+    @property
+    def countable_last_four_years_roes_count(self):
+        return len(self.last_four_years_roe)
 
     @property
     def low_pbr(self) -> float:
@@ -238,6 +252,13 @@ class Stock(UserDict):
         return max(ROEs) - min(ROEs) if len(ROEs) > 2 else 0
 
     @property
+    def last_four_years_roe_max_diff(self) -> float:
+        try:
+            return max(self.last_four_years_roe) - min(self.last_four_years_roe)
+        except:
+            return 0
+
+    @property
     def QROEs(self):
         return [(Quarter(*qroe[0]), qroe[1]) for qroe in self.get('QROEs', [])]
 
@@ -260,6 +281,10 @@ class Stock(UserDict):
     @property
     def other_year_stat(self):
         return zip(self.year_stat('BPSs'), self.year_stat('DEPTs'), self.year_stat('CAPEXs'))
+
+    @property
+    def is_five_years_record_low(self):
+        return self.low_pbr > self.pbr
 
     def expected_rate_by_price(self, price) -> float:
         return self.calc_expected_rate(self.calc_future_bps, FUTURE, price=price)
@@ -375,6 +400,8 @@ def attr_or_key_getter(name, obj):
 def make_filter_option_func(filter_option):
     def filter_option_func(s):
         v = getattr(Stock(s), filter_option.key)
+        if filter_option.is_boolean:
+            return v
         return v >= filter_option.value if filter_option.morethan else v <= filter_option.value
     return filter_option_func
 

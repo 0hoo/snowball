@@ -90,9 +90,12 @@ def stocks_add_filter_option(filter_id):
         key = request.form.get('filter_option_key')
         morethan = request.form.get('filter_option_morethan')
         morethan = True if morethan == 'morethan' else False
-        value = float(request.form.get('filter_option_value'))
+        try:
+            value = float(request.form.get('filter_option_value', 0))
+        except:
+            value = 0
         selected = [filter_option for filter_option in db.available_filter_options if filter_option.key == key][0]
-        new_filter_option = db.FilterOption(key, selected.title, morethan, value)
+        new_filter_option = db.FilterOption(key, selected.title, morethan, value, selected.is_boolean)
         
         current_filter = db.filter_by_id(filter_id)
         options = current_filter.get('options', [])
