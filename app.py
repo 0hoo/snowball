@@ -1,3 +1,5 @@
+import statistics
+
 from flask import Flask, request, render_template, redirect, url_for
 from bson.objectid import ObjectId
 
@@ -14,6 +16,7 @@ app = Flask(__name__)
 def stocks(status=None, filter_id=None):
     find = None
     filter_fscore = False
+    stat = {}
     if status == 'starred':
         find = {'starred': True}
     elif status == 'owned':
@@ -38,9 +41,18 @@ def stocks(status=None, filter_id=None):
         filter_bad=status!='bad', 
         filter_fscore=filter_fscore,
         filter_options=(current_filter.filter_options if current_filter else []))
+
+    if status in ['owned', 'starred', 'starredorowned']:
+        stat['low_pbr'] = len([stock for stock in stocks if stock.pbr <= 1])
+        stat['high_expected_rate'] = len([stock for stock in stocks if stock.expected_rate >= 15])
+        stat['fscore'] = len([stock for stock in stocks if stock.latest_fscore >= 3])
+        stat['mean_expected_rate'] = statistics.mean([stock.expected_rate for stock in stocks])
+        stat['mean_expected_rate_by_low_pbr'] = statistics.mean([stock.expected_rate_by_low_pbr for stock in stocks])
+        stat['mean_future_roe'] = statistics.mean([stock.future_roe for stock in stocks])
+
     return render_template('stocks.html', stocks=stocks, order_by=order_by, ordering=ordering, status=status,
         available_filter_options=db.available_filter_options, filters=filters,
-        current_filter=current_filter)
+        current_filter=current_filter, stat=stat)
 
 
 @app.route('/stocks/filter/new')

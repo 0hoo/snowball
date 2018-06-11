@@ -15,7 +15,17 @@
 <h3 class="ui header">
     <div class="content">
         Snowball
-        <div class="sub header">{{ stocks|count }}종목</div>
+        <div class="sub header">
+            {{ stocks|count }}종목
+            {% if stat %}
+            <div class="ui label">기대수익률(>= 15): {{ stat.high_expected_rate }}종목</div>            
+            <div class="ui label">PBR(<= 1): {{ stat.low_pbr }}종목</div>
+            <div class="ui label">FScore(= 3): {{ stat.fscore }}종목</div>
+            <div class="ui label">평균 기대수익률: {{ '%.2f'|format(stat.mean_expected_rate) }}%</div>
+            <div class="ui label">평균 저P기대수익률: {{ '%.2f'|format(stat.mean_expected_rate_by_low_pbr) }}%</div>
+            <div class="ui label">평균 fROE: {{ '%.2f'|format(stat.mean_future_roe) }}%</div>
+            {% endif %}
+        </div>
     </div>
 </h3>
 <form class="ui form" action="{{ url_for('add_stock') }}" method="post">
