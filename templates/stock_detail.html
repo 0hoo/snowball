@@ -429,7 +429,13 @@ function lineChart(elementId, label, labels, data, color) {
                                 {{ (stock.invest_price or 0)|round|int or 0 }}
                             {% endif %}
                         </td>
+                    </tr
+                    {% if stock.has_consensus %}
+                    <tr>
+                        <td>컨센서스평균</td>
+                        <td>{{ '%.2f'|format(stock.mean_consensus_roe or 0) }}</td>
                     </tr>
+                    {% endif %}
                 </tbody>
             </table>
             <table class="ui table">
