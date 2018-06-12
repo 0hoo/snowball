@@ -49,6 +49,11 @@ def stocks(status=None, filter_id=None):
         stat['mean_expected_rate'] = statistics.mean([stock.expected_rate for stock in stocks])
         stat['mean_expected_rate_by_low_pbr'] = statistics.mean([stock.expected_rate_by_low_pbr for stock in stocks])
         stat['mean_future_roe'] = statistics.mean([stock.future_roe for stock in stocks])
+        
+        qROE_numbers = [stock.QROEs[0][1] for stock in stocks if len(stock.QROEs) > 0]
+        qROE_numbers = [float(roe_number) for roe_number in qROE_numbers if roe_number]
+        stat['mean_qROEs'] = statistics.mean(qROE_numbers)
+        stat['qROEs_count'] = len(qROE_numbers)
 
     return render_template('stocks.html', stocks=stocks, order_by=order_by, ordering=ordering, status=status,
         available_filter_options=db.available_filter_options, filters=filters,

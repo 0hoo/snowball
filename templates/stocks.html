@@ -1,5 +1,23 @@
 {% extends "base.html" %}
 
+{% block title %}
+
+{% if status == 'owned' %}
+보유 - Snowball
+{% elif status == 'starred' %}
+관심 - Snowball
+{% elif status == 'starredorowned' %}
+보유|관심 - Snowball
+{% elif status == 'doubtful' %}
+데이터의심 - Snowball
+{% elif status == 'bad' %}
+마이너스 - Snowball
+{% else %}
+Snowball
+{% endif %}
+
+{% endblock %}
+
 {% block javascript %}
     $(document).ready(function() {
         $('#filter_name').keyup(function() {
@@ -28,12 +46,13 @@
         <div class="sub header">
             {{ stocks|count }}종목
             {% if stat %}
-            <div class="ui label">기대수익률(>= 15): {{ stat.high_expected_rate }}종목</div>            
-            <div class="ui label">PBR(<= 1): {{ stat.low_pbr }}종목</div>
+            <div class="ui label">기대수익률(>=15): {{ stat.high_expected_rate }}종목</div>            
+            <div class="ui label">PBR(<=1): {{ stat.low_pbr }}종목</div>
             <div class="ui label">FScore(= 3): {{ stat.fscore }}종목</div>
             <div class="ui label">평균 기대수익률: {{ '%.2f'|format(stat.mean_expected_rate) }}%</div>
-            <div class="ui label">평균 저P기대수익률: {{ '%.2f'|format(stat.mean_expected_rate_by_low_pbr) }}%</div>
+            <div class="ui label">평균 저P기대: {{ '%.2f'|format(stat.mean_expected_rate_by_low_pbr) }}%</div>
             <div class="ui label">평균 fROE: {{ '%.2f'|format(stat.mean_future_roe) }}%</div>
+            <div class="ui label">평균 분기ROE: {{ '%.2f'|format(stat.mean_qROEs) }}% ({{ stat.qROEs_count }}종목)</div>
             {% endif %}
         </div>
     </div>

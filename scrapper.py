@@ -114,6 +114,7 @@ def first_or_none(iter):
 def float_or_none(x):
     return None if not x else float(x.replace(',', ''))
 
+
 def quarter_from(text):
     if (not text) or ('/' not in text):
         return None
@@ -121,6 +122,7 @@ def quarter_from(text):
     text = text[:-3] if estimated else text
     comp = text.split('/')
     return Quarter(year=int(comp[0]), number=int(int(comp[1]) / 3), estimated=estimated)
+
 
 def parse_quarterly(code):
     print('분기 {}'.format(code))
