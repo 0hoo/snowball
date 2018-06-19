@@ -483,3 +483,7 @@ def save_filter(filter):
 
 def remove_filter(filter_id):
     db.filters.delete_one({'_id': ObjectId(filter_id)})
+
+
+def remove_stock(code):
+    db.stocks.remove({'code': code})

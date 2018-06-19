@@ -90,7 +90,6 @@ def stocks_save_filter(filter_id):
 
 @app.route('/stocks/filter/<filter_id>/remove')
 def stocks_remove_filter(filter_id):
-    current_filter = db.filter_by_id(filter_id)
     db.remove_filter(filter_id)
     return redirect(url_for('stocks'))
 
@@ -230,6 +229,12 @@ def add_stock():
         if code:
             parse_snowball(code)
     return redirect('stocks')
+
+
+@app.route('/stocks/<code>/remove')
+def remove_stock(code):
+    db.remove_stock(code)
+    return redirect(url_for('stocks'))
 
 
 if __name__ == '__main__':
