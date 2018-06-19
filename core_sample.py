@@ -1,6 +1,7 @@
 import requests
 from lxml import html
 
+
 DAUM_BASIC = 'http://finance.daum.net/item/main.daum?code='
 NAVER_COMPANY = 'http://companyinfo.stock.naver.com/v1/company/c1010001.aspx?cmp_cd='
 NAVER_YEARLY = "http://companyinfo.stock.naver.com/v1/company/ajax/cF1001.aspx?cmp_cd=%s&fin_typ=0&freq_typ=Y"
@@ -39,7 +40,7 @@ def snowball(code):
 
 
 def future_bps(bps, future_roe, future=10):
-    return int(bps * ((1 + (1 * future_roe / 100)) ** future))
+    return int(bps * ((1 + (future_roe / 100)) ** future))
 
 
 def expected_rate(future_bps, price, future=10):
@@ -48,3 +49,4 @@ def expected_rate(future_bps, price, future=10):
 
 def invest_price(future_bps, target_rate=15, future=10):
     return int(future_bps / ((1 + (target_rate / 100)) ** future))
+

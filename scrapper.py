@@ -9,6 +9,8 @@ from lxml import html
 
 import db
 from db import Quarter
+from utils import parse_float, parse_int
+
 
 DAUM_BASIC = 'http://finance.daum.net/item/main.daum?code='
 NAVER_COMPANY = 'http://companyinfo.stock.naver.com/v1/company/c1010001.aspx?cmp_cd='
@@ -45,20 +47,6 @@ def parse_snowball_stocks(filter_bad=True, only_starred_owned=False):
 
 def tree_from_url(url):
     return html.fromstring(requests.get(url).content)
-
-
-def parse_float(str):
-    try:
-        return float(str.replace(',', '').replace('%', ''))
-    except (ValueError, AttributeError):
-        return 0
-
-
-def parse_int(str):
-    try:
-        return int(str.replace(',', ''))
-    except (ValueError, AttributeError):
-        return 0
 
 
 def parse_basic(code):
@@ -114,6 +102,7 @@ def first_or_none(iter):
 def float_or_none(x):
     return None if not x else float(x.replace(',', ''))
 
+
 def quarter_from(text):
     if (not text) or ('/' not in text):
         return None
@@ -121,6 +110,7 @@ def quarter_from(text):
     text = text[:-3] if estimated else text
     comp = text.split('/')
     return Quarter(year=int(comp[0]), number=int(int(comp[1]) / 3), estimated=estimated)
+
 
 def parse_quarterly(code):
     print('분기 {}'.format(code))
@@ -180,6 +170,7 @@ def parse_snowball(code):
         return
 
     tds = tree.xpath('/html/body/table/tbody/tr[22]/td')
+    
     ROEs = [first_or_none(td.xpath('span/text()')) for td in tds]
     while ROEs and ROEs[-1] is None:
         ROEs.pop()

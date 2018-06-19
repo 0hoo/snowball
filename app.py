@@ -1,16 +1,22 @@
 from flask import Flask, request, render_template, redirect, url_for
+from bson.objectid import ObjectId
 
 import db
 from scrapper import parse_snowball
+from utils import mean_or_zero
+
 
 app = Flask(__name__)
 
 
 @app.route('/stocks')
 @app.route('/stocks/<status>')
+@app.route('/stocks/filter/<filter_id>')
 @app.route('/')
-def stocks(status=None):
+def stocks(status=None, filter_id=None):
     find = None
+    filter_fscore = False
+    stat = {}
     if status == 'starred':
         find = {'starred': True}
     elif status == 'owned':
@@ -19,10 +25,102 @@ def stocks(status=None):
         find = {'$or': [{'starred': True}, {'owned': True}]}
     elif status == 'doubtful':
         find = {'doubtful': True}
+    elif status == 'fscore':
+        filter_fscore = True
     order_by = request.args.get('order_by', 'expected_rate')
     ordering = request.args.get('ordering', 'desc')
-    stocks = db.all_stocks(order_by=order_by, ordering=ordering, find=find, filter_by_expected_rate=find==None, filter_bad=status!='bad')
-    return render_template('stocks.html', stocks=stocks, order_by=order_by, ordering=ordering, status=status)
+
+    filters = db.all_filters()
+    current_filter = None
+    if filter_id:
+        current_filter = db.filter_by_id(filter_id)
+    
+    stocks = db.all_stocks(order_by=order_by, 
+        ordering=ordering, find=find, 
+        filter_by_expected_rate=find==None, 
+        filter_bad=status!='bad', 
+        filter_fscore=filter_fscore,
+        filter_options=(current_filter.filter_options if current_filter else []))
+
+    if status in ['owned', 'starred', 'starredorowned']:
+        stat['low_pbr'] = len([stock for stock in stocks if stock.pbr <= 1])
+        stat['high_expected_rate'] = len([stock for stock in stocks if stock.expected_rate >= 15])
+        stat['fscore'] = len([stock for stock in stocks if stock.latest_fscore >= 3])
+        stat['mean_expected_rate'] = mean_or_zero([stock.expected_rate for stock in stocks])
+        stat['mean_expected_rate_by_low_pbr'] = mean_or_zero([stock.expected_rate_by_low_pbr for stock in stocks])
+        stat['mean_future_roe'] = mean_or_zero([stock.future_roe for stock in stocks])
+        
+        qROE_numbers = [stock.QROEs[0][1] for stock in stocks if len(stock.QROEs) > 0]
+        qROE_numbers = [float(roe_number) for roe_number in qROE_numbers if roe_number]
+        stat['mean_qROEs'] = mean_or_zero(qROE_numbers)
+        stat['qROEs_count'] = len(qROE_numbers)
+
+    return render_template('stocks.html', stocks=stocks, order_by=order_by, ordering=ordering, status=status,
+        available_filter_options=db.available_filter_options, filters=filters,
+        current_filter=current_filter, stat=stat)
+
+
+@app.route('/stocks/filter/new')
+def stocks_new_filter():
+    filters = db.all_filters()
+    name = '새필터' + str(len(filters) + 1)
+    filter_id = db.save_filter({
+        'name': name,
+        'options': [],
+    })
+    return redirect(url_for('stocks', filter_id=filter_id))
+
+
+@app.route('/stocks/filter/<filter_id>/save', methods=['POST'])
+def stocks_save_filter(filter_id):
+    if request.method == 'POST':
+        current_filter = db.filter_by_id(filter_id)
+        name = request.form.get('filter_name', '')
+        current_filter['name'] = name
+        db.save_filter(current_filter)
+        return redirect(url_for('stocks', filter_id=filter_id))      
+
+
+@app.route('/stocks/filter/<filter_id>/remove')
+def stocks_remove_filter(filter_id):
+    db.remove_filter(filter_id)
+    return redirect(url_for('stocks'))
+
+
+@app.route('/stocks/filter/<filter_id>/add_filter_option', methods=['POST'])
+def stocks_add_filter_option(filter_id):
+    if request.method == 'POST':
+        name = request.form.get('filter_name')
+        key = request.form.get('filter_option_key')
+        morethan = request.form.get('filter_option_morethan')
+        morethan = True if morethan == 'morethan' else False
+        try:
+            value = float(request.form.get('filter_option_value', 0))
+        except:
+            value = 0
+        selected = [filter_option for filter_option in db.available_filter_options if filter_option.key == key][0]
+        new_filter_option = db.FilterOption(key, selected.title, morethan, value, selected.is_boolean)
+        
+        current_filter = db.filter_by_id(filter_id)
+        options = current_filter.get('options', [])
+        filter_option_dict = new_filter_option._asdict()
+        filter_option_dict['_id'] = ObjectId()
+        options.append(filter_option_dict)
+        current_filter['options'] = options
+        current_filter['name'] = name
+        db.save_filter(current_filter)
+
+        return redirect(url_for('stocks', filter_id=current_filter['_id']))
+
+
+@app.route('/stocks/filter/<filter_id>/remove_filter_option/<filter_option_id>')
+def stocks_remove_filter_option(filter_id, filter_option_id):
+    current_filter = db.filter_by_id(filter_id)
+    remain = [o for o in current_filter.get('options', []) if o['_id'] != ObjectId(filter_option_id)]
+    current_filter['options'] = remain
+    db.save_filter(current_filter)
+
+    return redirect(url_for('stocks', filter_id=current_filter['_id']))
 
 
 @app.route('/stocks/fill')
@@ -124,6 +222,12 @@ def add_stock():
         if code:
             parse_snowball(code)
     return redirect('stocks')
+
+
+@app.route('/stocks/<code>/remove')
+def remove_stock(code):
+    db.remove_stock(code)
+    return redirect(url_for('stocks'))
 
 
 if __name__ == '__main__':

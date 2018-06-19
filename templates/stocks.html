@@ -1,5 +1,43 @@
 {% extends "base.html" %}
 
+{% block title %}
+
+{% if status == 'owned' %}
+보유 - Snowball
+{% elif status == 'starred' %}
+관심 - Snowball
+{% elif status == 'starredorowned' %}
+보유|관심 - Snowball
+{% elif status == 'doubtful' %}
+데이터의심 - Snowball
+{% elif status == 'bad' %}
+마이너스 - Snowball
+{% else %}
+Snowball
+{% endif %}
+
+{% endblock %}
+
+{% block javascript %}
+    $(document).ready(function() {
+        $('#filter_name').keyup(function() {
+            var value = $(this).val();
+            console.log(value);
+            $('#hidden_filter_name').val(value);
+        });
+        $('#select_filter_option').change(function() {
+            var selected = $('#select_filter_option option:selected').text();
+            if (selected.endsWith('(참)')) {
+                console.log('!!');
+                $('#filter_option_value').prop('disabled', true);
+            } else {
+                $('#filter_option_value').prop('disabled', false);
+            }
+            console.log(selected);
+        }); 
+    });
+{% endblock %}
+
 {% block content %}
 <style>
   #stocks-table thead tr:nth-child(1) {
@@ -13,11 +51,23 @@
   }
 </style>
 
+{% if not current_filter %}
 <h3 class="ui header">
-  <div class="content">
-    Snowball
-    <div class="sub header">{{ stocks|count }}종목</div>
-  </div>
+    <div class="content">
+        Snowball
+        <div class="sub header">
+            {{ stocks|count }}종목
+            {% if stat %}
+            <div class="ui label">기대수익률(>=15): {{ stat.high_expected_rate }}종목</div>            
+            <div class="ui label">PBR(<=1): {{ stat.low_pbr }}종목</div>
+            <div class="ui label">FScore(= 3): {{ stat.fscore }}종목</div>
+            <div class="ui label">평균 기대수익률: {{ '%.2f'|format(stat.mean_expected_rate) }}%</div>
+            <div class="ui label">평균 저P기대: {{ '%.2f'|format(stat.mean_expected_rate_by_low_pbr) }}%</div>
+            <div class="ui label">평균 fROE: {{ '%.2f'|format(stat.mean_future_roe) }}%</div>
+            <div class="ui label">평균 분기ROE: {{ '%.2f'|format(stat.mean_qROEs) }}% ({{ stat.qROEs_count }}종목)</div>
+            {% endif %}
+        </div>
+    </div>
 </h3>
 <form class="ui form" action="{{ url_for('add_stock') }}" method="post">
     <div class="fields">
@@ -29,6 +79,68 @@
         </div>
     </div>
 </form>
+{% endif %}
+{% if current_filter %}
+<div class="ui segment">
+    <form class="ui form" action="{{ url_for('stocks_save_filter', filter_id=current_filter._id) }}" method="POST">
+        <input type="hidden" name="current_filter_id" value="{{ current_filter._id }}">
+        <div class="fields">
+            <div class="six wide field">
+                <label>필터명</label>
+                <input type="text" id="filter_name" placeholder="필터명" name="filter_name" value="{{ current_filter.name }}">
+            </div>
+            <div class="four wide field">
+                <label>&nbsp;</label>
+                <button class="ui button" type="submit">필터명 변경</button>
+                <a class="ui button red" href="{{ url_for('stocks_remove_filter', filter_id=current_filter._id) }}">필터 삭제</a>
+            </div>
+        </div>
+    </form>
+    <div class="ui list">
+        {% for filter_option in current_filter.options %}
+        <span class="ui label black">
+            {{ filter_option.title }}
+            {% if not filter_option.is_boolean %} 
+                {{ filter_option.value }}
+                <b>{% if filter_option.morethan %}
+                    이상
+                {% else %}
+                    이하
+                {% endif %}
+            {% endif %}
+            </b> | 
+            <a href="{{ url_for('stocks_remove_filter_option', filter_id=current_filter._id, filter_option_id=filter_option._id) }}">제거</a>
+        </span>
+        {% endfor %}
+    </div>
+    <form class="ui form" action="{{ url_for('stocks_add_filter_option', filter_id=current_filter._id) }}" method="POST">
+        <input type="hidden" id="hidden_filter_name" name="filter_name" value="{{ current_filter.name }}">
+        <div class="four fields">
+            <div class="field">
+                <select class="ui fluid dropdown" name="filter_option_key" id="select_filter_option">
+                    {% for filter_option in available_filter_options %}
+                    <option value="{{ filter_option.key }}">{{ filter_option.title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <input type="number" name="filter_option_value" id="filter_option_value" placeholder="값">
+            </div>
+            <div class="field">
+                <select class="ui fluid dropdown" name="filter_option_morethan" id="filter_option_morethan">
+                    <option value="morethan">이상</option>
+                    <option value="lessthan">이하</option>
+                </select>
+            </div>
+            <div class="field">
+                <button class="ui button" type="submit">필터링 옵션 추가</button>
+            </div>
+        </div>
+        <div>{{ stocks|count }}종목</div>
+    </form>
+</div>
+<br>
+{% endif %}
 <div class="ui grid">
     <div class="sixteen wide column">
         <table class="ui very basic compact table" id="stocks-table">
@@ -36,11 +148,11 @@
             <tr>
                 <th>종목코드</th>
                 <th>
-                    <a href="{{ url_for('stocks') }}?order_by=title&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">종목명</a>
+                    <a href="{{ url_for('stocks', status=status) }}?order_by=title&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">종목명</a>
                     {% if order_by == 'title' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
                 </th>
                 <th>
-                    <a href="{{ url_for('stocks') }}?order_by=current_price&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">현재가</a>
+                    <a href="{{ url_for('stocks', status=status) }}?order_by=current_price&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">현재가</a>
                     {% if order_by == 'current_price' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
                 </th>
                 <th>
@@ -108,7 +220,7 @@
                     </td>
                     <td>
                         {% if stock.calculable %}
-                            {% if stock.low_pbr > stock.pbr %}<span class="ui label black">{% endif %}
+                            {% if stock.is_five_years_record_low %}<span class="ui label black">{% endif %}
                             {{ '%.2f'|format(stock.expected_rate_by_current_pbr or 0) }}
                             {% if stock.low_pbr > stock.pbr %}</span>{% endif %}
                         {% endif %}

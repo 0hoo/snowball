@@ -234,27 +234,30 @@ function lineChart(elementId, label, labels, data, color) {
                 </tbody>
             </table>
             <table class="ui table">
-                    <thead>
-                        <tr>
-                            <th>연도</th>
-                            <th>FScore</th>
-                            <th>주식수</th>
-                            <th>흑자</th>
-                            <th>CFO</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for fscore in stock.fscores %}
-                        <tr>
-                            <td>{{ fscore[0] }}</td>
-                            <td>{{ fscore[1].total_issued_stock + fscore[1].profitable + fscore[1].cfo }}</td>
-                            <td>{{ fscore[1].total_issued_stock }}</td>
-                            <td>{{ fscore[1].profitable }}</td>
-                            <td>{{ fscore[1].cfo }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <thead>
+                    <tr>
+                        <th>연도</th>
+                        <th>FScore</th>
+                        <th>주식수</th>
+                        <th>흑자</th>
+                        <th>CFO</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fscore in stock.fscores %}
+                    <tr>
+                        <td>{{ fscore[0] }}</td>
+                        <td>{{ fscore[1].total_issued_stock + fscore[1].profitable + fscore[1].cfo }}</td>
+                        <td>{{ fscore[1].total_issued_stock }}</td>
+                        <td>{{ fscore[1].profitable }}</td>
+                        <td>{{ fscore[1].cfo }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <a href="{{ url_for('remove_stock', code=stock.code) }}" onclick="return confirm('종목을 삭제하시겠습니까?')" class="ui button">
+                종목 삭제
+            </a>
         </div>
         <div class="column">
             <div class="ui form">
@@ -429,7 +432,13 @@ function lineChart(elementId, label, labels, data, color) {
                                 {{ (stock.invest_price or 0)|round|int or 0 }}
                             {% endif %}
                         </td>
+                    </tr
+                    {% if stock.has_consensus %}
+                    <tr>
+                        <td>컨센서스평균</td>
+                        <td>{{ '%.2f'|format(stock.mean_consensus_roe or 0) }}</td>
                     </tr>
+                    {% endif %}
                 </tbody>
             </table>
             <table class="ui table">
