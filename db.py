@@ -10,6 +10,9 @@ from collections import UserDict, namedtuple
 from pymongo import MongoClient, ASCENDING, DESCENDING
 from bson.objectid import ObjectId
 
+from utils import attr_or_key_getter
+
+
 FScore = namedtuple('FScore', ['total_issued_stock', 'profitable', 'cfo'])
 YearStat = namedtuple('YearStat', ['year', 'value', 'calculated'])
 Quarter = namedtuple('Quarter', ['year', 'number', 'estimated'])
@@ -409,13 +412,6 @@ class Stock(UserDict):
     def __str__(self) -> str:
         return '{} : {}'.format(self['title'], self['code'])
 
-
-def attr_or_key_getter(name, obj):
-    try:
-        return getattr(obj, name)
-    except AttributeError:
-        return obj.get(name, 0)
-    
 
 def make_filter_option_func(filter_option):
     def filter_option_func(s):

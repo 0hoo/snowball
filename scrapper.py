@@ -9,6 +9,8 @@ from lxml import html
 
 import db
 from db import Quarter
+from utils import parse_float, parse_int
+
 
 DAUM_BASIC = 'http://finance.daum.net/item/main.daum?code='
 NAVER_COMPANY = 'http://companyinfo.stock.naver.com/v1/company/c1010001.aspx?cmp_cd='
@@ -45,20 +47,6 @@ def parse_snowball_stocks(filter_bad=True, only_starred_owned=False):
 
 def tree_from_url(url):
     return html.fromstring(requests.get(url).content)
-
-
-def parse_float(str):
-    try:
-        return float(str.replace(',', '').replace('%', ''))
-    except (ValueError, AttributeError):
-        return 0
-
-
-def parse_int(str):
-    try:
-        return int(str.replace(',', ''))
-    except (ValueError, AttributeError):
-        return 0
 
 
 def parse_basic(code):

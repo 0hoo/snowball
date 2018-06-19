@@ -1,19 +1,12 @@
-import statistics
-
 from flask import Flask, request, render_template, redirect, url_for
 from bson.objectid import ObjectId
 
 import db
 from scrapper import parse_snowball
+from utils import mean_or_zero
+
 
 app = Flask(__name__)
-
-
-def mean_or_zero(iter):
-    try:
-        return statistics.mean(iter)
-    except statistics.StatisticsError:
-        return 0
 
 
 @app.route('/stocks')
