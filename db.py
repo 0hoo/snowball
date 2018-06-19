@@ -50,6 +50,8 @@ available_filter_options = [
     FilterOption(key='is_five_years_record_low', title='5년최저PBR(참)', morethan=None, value=None, is_boolean=True),
     FilterOption(key='has_consensus', title='컨센서스있음(참)', morethan=None, value=None, is_boolean=True),
     FilterOption(key='is_positive_consensus_roe', title='컨센서스>fROE(참)', morethan=None, value=None, is_boolean=True),
+    FilterOption(key='is_starred', title='관심종목(참)', morethan=None, value=None, is_boolean=True),
+    FilterOption(key='is_owned', title='보유종목(참)', morethan=None, value=None, is_boolean=True),
 ]
 
 
@@ -71,6 +73,14 @@ class Stock(UserDict):
     @property
     def object_id(self) -> str:
         return self['_id']
+
+    @property
+    def is_starred(self) -> bool:
+        return self.get('starred', False)
+
+    @property
+    def is_owned(self) -> bool:
+        return self.get('owned', False)
 
     @property
     def current_price(self):
