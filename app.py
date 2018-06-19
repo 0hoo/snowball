@@ -9,6 +9,13 @@ from scrapper import parse_snowball
 app = Flask(__name__)
 
 
+def mean_or_zero(iter):
+    try:
+        return statistics.mean(iter)
+    except statistics.StatisticsError:
+        return 0
+
+
 @app.route('/stocks')
 @app.route('/stocks/<status>')
 @app.route('/stocks/filter/<filter_id>')
@@ -46,13 +53,13 @@ def stocks(status=None, filter_id=None):
         stat['low_pbr'] = len([stock for stock in stocks if stock.pbr <= 1])
         stat['high_expected_rate'] = len([stock for stock in stocks if stock.expected_rate >= 15])
         stat['fscore'] = len([stock for stock in stocks if stock.latest_fscore >= 3])
-        stat['mean_expected_rate'] = statistics.mean([stock.expected_rate for stock in stocks])
-        stat['mean_expected_rate_by_low_pbr'] = statistics.mean([stock.expected_rate_by_low_pbr for stock in stocks])
-        stat['mean_future_roe'] = statistics.mean([stock.future_roe for stock in stocks])
+        stat['mean_expected_rate'] = mean_or_zero([stock.expected_rate for stock in stocks])
+        stat['mean_expected_rate_by_low_pbr'] = mean_or_zero([stock.expected_rate_by_low_pbr for stock in stocks])
+        stat['mean_future_roe'] = mean_or_zero([stock.future_roe for stock in stocks])
         
         qROE_numbers = [stock.QROEs[0][1] for stock in stocks if len(stock.QROEs) > 0]
         qROE_numbers = [float(roe_number) for roe_number in qROE_numbers if roe_number]
-        stat['mean_qROEs'] = statistics.mean(qROE_numbers)
+        stat['mean_qROEs'] = mean_or_zero(qROE_numbers)
         stat['qROEs_count'] = len(qROE_numbers)
 
     return render_template('stocks.html', stocks=stocks, order_by=order_by, ordering=ordering, status=status,

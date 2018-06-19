@@ -40,7 +40,7 @@ def snowball(code):
 
 
 def future_bps(bps, future_roe, future=10):
-    return int(bps * ((1 + (1 * future_roe / 100)) ** future))
+    return int(bps * ((1 + (future_roe / 100)) ** future))
 
 
 def expected_rate(future_bps, price, future=10):
