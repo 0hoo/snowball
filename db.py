@@ -42,6 +42,7 @@ available_filter_options = [
     FilterOption(key='expected_rate_by_low_pbr', title='저P기대수익률', morethan=None, value=None, is_boolean=False),
     FilterOption(key='pbr', title='PBR', morethan=None, value=None, is_boolean=False),
     FilterOption(key='per', title='PER', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='dividend_rate', title='배당률', morethan=None, value=None, is_boolean=False),
     FilterOption(key='countable_last_four_years_roes_count', title='계산가능ROE수', morethan=None, value=None, is_boolean=False),
     FilterOption(key='roe_max_diff', title='ROE최대최소차', morethan=None, value=None, is_boolean=False),
     FilterOption(key='last_four_years_roe_max_diff', title='최근4년ROE최대최소차', morethan=None, value=None, is_boolean=False),
@@ -168,13 +169,21 @@ class Stock(UserDict):
             return 0
 
     @property
+    def dividend_rate(self) -> float:
+        return self.get('dividend_rate', 0)
+
+    @property
     def has_note(self) -> bool:
         return len(self.get('note', '')) > 0
 
     @property
     def latest_fscore(self) -> int:
-        fscore = self.fscores[-1][1]
-        return sum([fscore.total_issued_stock + fscore.profitable + fscore.cfo])
+        last_year_fscore = [f for f in self.fscores if f[0] == LAST_YEAR]
+        if not last_year_fscore:
+            return -1
+        else:
+            fscore = last_year_fscore[0][1]
+            return sum([fscore.total_issued_stock + fscore.profitable + fscore.cfo])
 
     @property
     def fscores(self) -> List[Tuple[int, FScore]]:

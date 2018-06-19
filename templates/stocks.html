@@ -167,6 +167,10 @@ Snowball
                     {% if order_by == 'pbr' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
                 </th>
                 <th>
+                    <a href="{{ url_for('stocks', status=status) }}?order_by=dividend_rate&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">배당</a>
+                    {% if order_by == 'dividend_rate' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </th>
+                <th>
                     <a href="{{ url_for('stocks', status=status) }}?order_by=future_roe&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">fROE</a>
                     {% if order_by == 'future_roe' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
                 </th>
@@ -177,10 +181,6 @@ Snowball
                 <th>
                     <a href="{{ url_for('stocks', status=status) }}?order_by=expected_rate_by_current_pbr&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">현P기</a>
                     {% if order_by == 'expected_rate_by_current_pbr' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
-                </th>
-                <th>
-                    <a href="{{ url_for('stocks', status=status) }}?order_by=expected_rate_by_mid_pbr&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">중P기</a>
-                    {% if order_by == 'expected_rate_by_mid_pbr' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
                 </th>
                 <th>
                     <a href="{{ url_for('stocks', status=status) }}?order_by=expected_rate_by_low_pbr&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">저P기</a>
@@ -202,6 +202,7 @@ Snowball
                     <td class="{{ stock.price_color }}">{{ stock.price_sign }}{{ '%.2f'|format(stock.rate_diff) }}%</td>
                     <td>{{ stock.per }}</td>
                     <td>{{ stock.pbr }}</td>
+                    <td>{{ stock.dividend_rate }}</td>
                     <td>
                          <div class="ui label">
                              {{ '%.2f'|format(stock.future_roe or 0) }}
@@ -223,11 +224,6 @@ Snowball
                             {% if stock.is_five_years_record_low %}<span class="ui label black">{% endif %}
                             {{ '%.2f'|format(stock.expected_rate_by_current_pbr or 0) }}
                             {% if stock.low_pbr > stock.pbr %}</span>{% endif %}
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if stock.calculable %}
-                            {{ '%.2f'|format(stock.expected_rate_by_mid_pbr or 0) }}
                         {% endif %}
                     </td>
                     <td>
