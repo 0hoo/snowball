@@ -9,6 +9,9 @@ from utils import mean_or_zero
 app = Flask(__name__)
 
 
+VERSION = 1.03
+
+
 @app.route('/stocks')
 @app.route('/stocks/<status>')
 @app.route('/stocks/filter/<filter_id>')
@@ -55,7 +58,7 @@ def stocks(status=None, filter_id=None):
         stat['mean_qROEs'] = mean_or_zero(qROE_numbers)
         stat['qROEs_count'] = len(qROE_numbers)
 
-    return render_template('stocks.html', stocks=stocks, order_by=order_by, ordering=ordering, status=status,
+    return render_template('stocks.html', VERSION=VERSION, stocks=stocks, order_by=order_by, ordering=ordering, status=status,
         available_filter_options=db.available_filter_options, filters=filters,
         current_filter=current_filter, stat=stat)
 
@@ -132,7 +135,7 @@ def stocks_fill_snowball_stats():
 @app.route('/stock/<code>')
 def stock(code):
     stock = db.stock_by_code(code)
-    return render_template('stock_detail.html', stock=stock)
+    return render_template('stock_detail.html', VERSION=VERSION, stock=stock)
 
 
 @app.route('/stock/refresh/<code>')
@@ -148,7 +151,7 @@ def stock_expected_rate_by_price(code):
         expected_rate_price = float(request.args.get('price'))
     except ValueError:
         return redirect(url_for('stock', code=code))
-    return render_template('stock_detail.html', stock=stock, expected_rate_price=expected_rate_price)
+    return render_template('stock_detail.html', VERSION=VERSION, stock=stock, expected_rate_price=expected_rate_price)
 
 
 @app.route('/stock/<code>/my_price', methods=['POST'])
