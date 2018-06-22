@@ -138,6 +138,14 @@ def stock(code):
     return render_template('stock_detail.html', VERSION=VERSION, stock=stock)
 
 
+@app.route('/stock/<code>/records')
+def stock_records(code):
+    import historical
+    stock = db.stock_by_code(code)
+    records = historical.records_by_yahoo(stock)
+    return render_template('stock_records.html', VERSION=VERSION, stock=stock, records=records)
+
+
 @app.route('/stock/refresh/<code>')
 def stock_refresh(code):
     parse_snowball(code)
