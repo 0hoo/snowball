@@ -1,4 +1,4 @@
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 from types import FunctionType
 
 from datetime import datetime
@@ -57,7 +57,7 @@ available_filter_options = [
 
 class Filter(UserDict):
     @property
-    def filter_options(self):
+    def filter_options(self) -> List[FilterOption]:
         return [FilterOption(
             key=o['key'], 
             title=o['title'], 
@@ -83,8 +83,8 @@ class Stock(UserDict):
         return self.get('owned', False)
 
     @property
-    def current_price(self):
-        return self.get('current_price', 0)
+    def current_price(self) -> int:
+        return int(self.get('current_price', 0))
 
     @property
     def price_arrow(self) -> str:
@@ -105,39 +105,39 @@ class Stock(UserDict):
         return '+' if self.get('price_diff') > 0 else ''
 
     @property
-    def pbr(self):
-        return self.get('pbr')
+    def pbr(self) -> float:
+        return self.get('pbr', 0)
 
     @property
-    def per(self):
-        return self.get('per')
+    def per(self) -> float:
+        return self.get('per', 0)
 
     @property
     def financial_statements_url(self) -> str:
         return "http://companyinfo.stock.naver.com/v1/company/ajax/cF1001.aspx?cmp_cd=%s&fin_typ=0&freq_typ=Y" % (self['code'])
 
     @property
-    def roes(self) -> List[Tuple[int, int or None]]:
+    def roes(self) -> List[Tuple[int, Optional[float]]]:
         return self.year_stat('ROEs')
 
     @property
-    def pbrs(self) -> List[Tuple[int, int or None]]:
+    def pbrs(self) -> List[Tuple[int, Optional[float]]]:
         return self.year_stat('PBRs')
 
     @property
-    def pers(self) -> List[Tuple[int, int or None]]:
+    def pers(self) -> List[Tuple[int, Optional[float]]]:
         return self.year_stat('PERs')
     
     @property
-    def epss(self) -> List[Tuple[int, int or None]]:
+    def epss(self) -> List[Tuple[int, Optional[float]]]:
         return self.year_stat('EPSs')
 
     @property
-    def countable_roes(self):
+    def countable_roes(self) -> List[Tuple[int, Optional[float]]]:
         return [roe for roe in self.get('ROEs', []) if roe]
 
     @property
-    def countable_last_four_years_roes_count(self):
+    def countable_last_four_years_roes_count(self) -> int:
         return len(self.last_four_years_roe)
 
     @property
@@ -214,11 +214,11 @@ class Stock(UserDict):
         return [roe[1] for roe in self.year_stat('ROEs') if roe[1] and roe[0] >= (LAST_YEAR - 3) and roe[0] <= LAST_YEAR]
 
     @property
-    def calculated_roe_count(self):
+    def calculated_roe_count(self) -> int:
         return len(self.last_four_years_roe)
 
     @property
-    def calculable_pbr_count(self):
+    def calculable_pbr_count(self) -> int:
         return len([pbr for pbr in self.year_stat('PBRs', exclude_future=True) if pbr[1] > 0])
 
     @property
@@ -283,11 +283,11 @@ class Stock(UserDict):
             return 0
 
     @property
-    def QROEs(self):
+    def QROEs(self) -> List[Tuple[Quarter, float]]:
         return [(Quarter(*qroe[0]), qroe[1]) for qroe in self.get('QROEs', [])]
 
     @property
-    def QBPSs(self):
+    def QBPSs(self) -> List[Tuple[Quarter, int]]:
         return [(Quarter(*qbps[0]), qbps[1]) for qbps in self.get('QBPSs', [])]
 
     @property
@@ -311,7 +311,7 @@ class Stock(UserDict):
         return self.low_pbr > self.pbr
 
     @property
-    def has_consensus(self):
+    def has_consensus(self) -> bool:
         return len(self.consensus_roes) > 0
 
     @property
@@ -328,10 +328,10 @@ class Stock(UserDict):
             return False
         return self.mean_consensus_roe >= self.future_roe
 
-    def expected_rate_by_price(self, price) -> float:
+    def expected_rate_by_price(self, price: int) -> float:
         return self.calc_expected_rate(self.calc_future_bps, FUTURE, price=price)
 
-    def calc_future_bps(self, future) -> int:
+    def calc_future_bps(self, future: int) -> int:
         if not self.calculable:
             return 0
         bps = self.get('bps', 0)
@@ -339,22 +339,22 @@ class Stock(UserDict):
         future_roe = adjusted_future_roe or self.future_roe
         return int(bps * ((1 + (1 * future_roe / 100)) ** future))
 
-    def calc_future_price_low_pbr(self, future) -> int:
+    def calc_future_price_low_pbr(self, future: int) -> int:
         return int(self.calc_future_bps(future) * self.low_pbr)
 
-    def calc_future_price_high_pbr(self, future) -> int:
+    def calc_future_price_high_pbr(self, future: int) -> int:
         return int(self.calc_future_bps(future) * self.high_pbr)
 
-    def calc_future_price_current_pbr(self, future) -> int:
+    def calc_future_price_current_pbr(self, future: int) -> int:
         return int(self.calc_future_bps(future) * self['pbr'])
 
-    def calc_future_price_low_current_mid_pbr(self, future) -> int:
+    def calc_future_price_low_current_mid_pbr(self, future: int) -> int:
         return int(self.calc_future_bps(future) * self.mid_pbr)
 
-    def calc_future_price_adjusted_future_pbr(self, future) -> int:
+    def calc_future_price_adjusted_future_pbr(self, future: int) -> int:
         return int(self.calc_future_bps(future) * self.get('adjusted_future_pbr', 0))
 
-    def calc_expected_rate(self, calc_bps, future, price=None):
+    def calc_expected_rate(self, calc_bps, future: int, price: int=None):
         if not price:
             price = self.current_price
         return ((calc_bps(future) / price) ** (1.0 / future) - 1) * 100
@@ -388,7 +388,7 @@ class Stock(UserDict):
         
         return FScore(total_issued_stock=total_issued_stock, profitable=profitable, cfo=cfo)
 
-    def year_stat(self, stat, exclude_future=False) -> List[Tuple[int, int]]:
+    def year_stat(self, stat, exclude_future=False) -> List[Tuple[int, Optional[float]]]:
         stats = self.get(stat)
         if not stats:
             return [(0, 0)]
@@ -428,6 +428,7 @@ class Stock(UserDict):
             'code': self.get('code'),
             'records': records,
         })
+
     def __str__(self) -> str:
         return '{} : {}'.format(self['title'], self['code'])
 
