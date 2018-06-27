@@ -53,8 +53,9 @@ function lineChart(elementId, label, labels, data, color) {
       {% if stock.owned %}
         <i class="icon heart red"></i>
       {% endif %}
-      <div class="sub header">{{ stock.code }}</div>
-      <a href="{{ url_for('stock_records', code=stock.code) }}">가격분석</a>
+      <div class="sub header">{{ stock.code }}
+        | <a href="{{ url_for('stock_records', code=stock.code) }}">가격분석</a>
+      </div>
   </div>
 </h3>
 
