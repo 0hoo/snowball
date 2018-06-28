@@ -9,7 +9,7 @@ from utils import mean_or_zero
 app = Flask(__name__)
 
 
-VERSION = 1.03
+VERSION = 1.04
 
 
 @app.route('/stocks')
