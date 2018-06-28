@@ -3,6 +3,8 @@ import time
 import random
 from datetime import datetime
 from statistics import mean
+import urllib.request
+import json
 
 import requests
 from lxml import html
@@ -236,3 +238,26 @@ def parse_snowball(code):
     stock.save_record()
 
     parse_quarterly(code)
+    parse_json(code)
+
+
+def parse_json(code):
+    print('종목 {} JSON...'.format(code))
+    url = NAVER_YEARLY_JSON % (code)
+    urlopen = urllib.request.urlopen(url)
+    data = json.loads(urlopen.read().decode())
+    GPs = []
+    if data and 'DATA' in data and data['DATA']:
+        yyyy = [int(y[:4]) for y in data['YYMM'] if len(y) > 4 and len(y.split('/')) > 2]
+        year_data_keys = {y: i+1 for i, y in enumerate(yyyy)}
+    
+        for row in data['DATA']:
+            if 'ACC_NM' in row and row['ACC_NM'] == '매출총이익':
+                GPs = [(y, row['DATA' + str(year_data_keys[y])]) for y in sorted(list(year_data_keys.keys()))]
+                break
+    stock = {
+        'code': code,
+        'GPs': GPs
+    }
+    print('GPs: {}'.format(GPs))
+    stock = db.save_stock(stock)

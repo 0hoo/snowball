@@ -331,6 +331,40 @@ class Stock(UserDict):
             return False
         return self.mean_consensus_roe >= self.future_roe
 
+    @property
+    def TAs(self):
+        a = self.year_stat('TAs', exclude_future=False)
+        print(a)
+        return a
+
+    def calc_gpa(self, gp):
+        if not gp[1]:
+            return None
+        TA = [TA for TA in self.TAs if TA[0] == gp[0]]
+        if not TA:
+            return None
+        TA = TA[0]
+        if not TA[1]:
+            return None
+        return gp[1] / TA[1]
+
+    @property
+    def GPAs(self):
+        a = [(gp[0], self.calc_gpa(gp)) for gp in self.get('GPs', [])]
+        print(a)
+        return a
+
+    @property
+    def GPA_stat(self):
+        return zip(self.TAs, self.get('GPs', []), self.GPAs)
+
+    @property
+    def last_year_gpa(self):
+        v = [gpa[1] for gpa in self.GPAs if gpa[0] == LAST_YEAR]
+        if not v or not v[0]:
+            return 0
+        return v[0]
+        
     def expected_rate_by_price(self, price: int) -> float:
         return self.calc_expected_rate(self.calc_future_bps, FUTURE, price=price)
 

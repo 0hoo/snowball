@@ -257,6 +257,26 @@ function lineChart(elementId, label, labels, data, color) {
                     {% endfor %}
                 </tbody>
             </table>
+            <table class="ui table">
+                <thead>
+                    <tr>
+                        <th>연도</th>
+                        <th>총자산</th>
+                        <th>매출총이익</th>
+                        <th>GP/A</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for TA, GP, GPA in stock.GPA_stat %}
+                    <tr>
+                        <td>{{ GPA[0] }}</td>
+                        <td>{{ TA[1] }}</td>
+                        <td>{% if GP[1] %}{{ GP[1] }}{% endif %}</td>
+                        <td>{% if GPA[1] %}{{ GPA[1] }}{% endif %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
             <a href="{{ url_for('remove_stock', code=stock.code) }}" onclick="return confirm('종목을 삭제하시겠습니까?')" class="ui button">
                 종목 삭제
             </a>

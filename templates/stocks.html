@@ -190,6 +190,10 @@ Snowball
                     FScore
                 </th>
                 <th>
+                    <a href="{{ url_for('stocks', status=status) }}?order_by=last_year_gpa&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">GPA</a>
+                    {% if order_by == 'last_year_gpa' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </th>
+                <th>
                 </th>
             </tr>
             </thead>
@@ -238,6 +242,7 @@ Snowball
                         {% endif %}
                     </td>
                     <td>{{ stock.latest_fscore }}</td>
+                    <td>{% if stock.last_year_gpa %}{{ '%.2f'|format(stock.last_year_gpa) }}{% endif %}</td>
                     <td>
                         {% if stock.owned %}
                             <i class="icon heart red"></i>
