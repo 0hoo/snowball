@@ -271,8 +271,8 @@ function lineChart(elementId, label, labels, data, color) {
                     <tr>
                         <td>{{ GPA[0] }}</td>
                         <td>{{ TA[1] }}</td>
-                        <td>{% if GP[1] %}{{ GP[1] }}{% endif %}</td>
-                        <td>{% if GPA[1] %}{{ GPA[1] }}{% endif %}</td>
+                        <td>{% if GP[1] %}{{ '%.2f'|format(GP[1]) }}{% endif %}</td>
+                        <td>{% if GPA[1] %}{{ '%.2f'|format(GPA[1]) }}{% endif %}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
