@@ -14,7 +14,6 @@ VERSION = 1.04
 
 @app.route('/stocks')
 @app.route('/stocks/<status>')
-#@app.route('/stocks/filter/<filter_id>')
 @app.route('/')
 def stocks(status=None, filter_id=None):
     find = None
@@ -136,7 +135,8 @@ def stocks_fill_snowball_stats():
 @app.route('/stock/<code>')
 def stock(code):
     stock = db.stock_by_code(code)
-    return render_template('stock_detail.html', VERSION=VERSION, stock=stock)
+    filters = db.all_filters()
+    return render_template('stock_detail.html', VERSION=VERSION, stock=stock, filters=filters)
 
 
 @app.route('/stock/<code>/records')

@@ -333,9 +333,7 @@ class Stock(UserDict):
 
     @property
     def TAs(self):
-        a = self.year_stat('TAs', exclude_future=False)
-        print(a)
-        return a
+        return self.year_stat('TAs', exclude_future=False)
 
     def calc_gpa(self, gp):
         if not gp[1]:
@@ -350,13 +348,11 @@ class Stock(UserDict):
 
     @property
     def GPAs(self):
-        a = [(gp[0], self.calc_gpa(gp)) for gp in self.get('GPs', [])]
-        print(a)
-        return a
+        return [(gp[0], self.calc_gpa(gp)) for gp in self.get('GPs', [])]
 
     @property
     def GPA_stat(self):
-        return zip(self.TAs, self.get('GPs', []), self.GPAs)
+        return zip(self.TAs, [v for v in self.get('GPs', []) if v[1]], [v for v in self.GPAs if v[1]])
 
     @property
     def last_year_gpa(self):
@@ -432,10 +428,14 @@ class Stock(UserDict):
         
         last_year_index = self.get('last_year_index')
         assert(last_year_index is not None)
-        
-        year = lambda idx: LAST_YEAR - (last_year_index - idx)
-        return [(year(idx), value) for idx, value in enumerate(stats) 
-            if not exclude_future or year(idx) <= LAST_YEAR]
+        if len(stats) < last_year_index:
+            year = lambda idx: LAST_YEAR - len(stats) + idx + 1
+            return [(year(idx), value) for idx, value in enumerate(stats) 
+                if not exclude_future or year(idx) <= LAST_YEAR]
+        else:
+            year = lambda idx: LAST_YEAR - (last_year_index - idx)
+            return [(year(idx), value) for idx, value in enumerate(stats) 
+                if not exclude_future or year(idx) <= LAST_YEAR]
 
     def save_record(self):
         starred = self.get('starred', False)

@@ -18,7 +18,8 @@ DAUM_BASIC = 'http://finance.daum.net/item/main.daum?code='
 NAVER_COMPANY = 'http://companyinfo.stock.naver.com/v1/company/c1010001.aspx?cmp_cd='
 NAVER_YEARLY = "http://companyinfo.stock.naver.com/v1/company/ajax/cF1001.aspx?cmp_cd=%s&fin_typ=0&freq_typ=Y"
 NAVER_QUARTERLY = "http://companyinfo.stock.naver.com/v1/company/ajax/cF1001.aspx?cmp_cd=%s&fin_typ=0&freq_typ=Q"
-NAVER_YEARLY_JSON = "http://companyinfo.stock.naver.com/v1/company/cF3002.aspx?cmp_cd=%s&frq=0&rpt=0&finGubun=MAIN&frqTyp=0&cn="
+#NAVER_YEARLY_JSON = "http://companyinfo.stock.naver.com/v1/company/cF3002.aspx?cmp_cd=%s&frq=0&rpt=0&finGubun=MAIN&frqTyp=0&cn="
+NAVER_JSON1 = 'http://companyinfo.stock.naver.com/v1/company/cF4002.aspx?cmp_cd=%s&frq=0&rpt=1&finGubun=MAIN&frqTyp=0&cn='
 LAST_YEAR = str(datetime.now().year - 1)
 
 
@@ -243,7 +244,7 @@ def parse_snowball(code):
 
 def parse_json(code):
     print('종목 {} JSON...'.format(code))
-    url = NAVER_YEARLY_JSON % (code)
+    url = NAVER_JSON1 % (code)
     urlopen = urllib.request.urlopen(url)
     data = json.loads(urlopen.read().decode())
     GPs = []
@@ -252,7 +253,7 @@ def parse_json(code):
         year_data_keys = {y: i+1 for i, y in enumerate(yyyy)}
     
         for row in data['DATA']:
-            if 'ACC_NM' in row and row['ACC_NM'] == '매출총이익':
+            if 'ACC_NM' in row and row['ACC_NM'].startswith('매출총이익＜당기'):
                 GPs = [(y, row['DATA' + str(year_data_keys[y])]) for y in sorted(list(year_data_keys.keys()))]
                 break
     stock = {
