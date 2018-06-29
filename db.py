@@ -211,7 +211,7 @@ class Stock(UserDict):
 
     @property
     def last_four_years_roe(self) -> List[int]:
-        return [roe[1] for roe in self.four_years_roe(LAST_YEAR)]
+        return [roe[1] for roe in self.four_years_roe(THIS_YEAR)]
 
     def four_years_roe(self, year) -> List[Tuple[int, float]]:
         return [roe for roe in self.year_stat('ROEs') if roe[1] and roe[0] >= (year - 4) and roe[0] < year]
