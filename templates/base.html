@@ -71,7 +71,7 @@
         <div class="menu">
             <a href="{{ url_for('stocks_new_filter') }}" class="item"><b>새 필터 만들기</b></a>
             {% for filter in filters %}
-            <a href="{{ url_for('stocks', filter_id=filter._id) }}" class="item">
+            <a href="{{ url_for('stocks') }}?filter_id={{ filter._id}}" class="item">
                 {{ filter.name }}
             </a>
             {% endfor %}

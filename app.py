@@ -14,7 +14,7 @@ VERSION = 1.04
 
 @app.route('/stocks')
 @app.route('/stocks/<status>')
-@app.route('/stocks/filter/<filter_id>')
+#@app.route('/stocks/filter/<filter_id>')
 @app.route('/')
 def stocks(status=None, filter_id=None):
     find = None
@@ -32,6 +32,7 @@ def stocks(status=None, filter_id=None):
         filter_fscore = True
     order_by = request.args.get('order_by', 'expected_rate')
     ordering = request.args.get('ordering', 'desc')
+    filter_id = request.args.get('filter_id', None)
 
     filters = db.all_filters()
     current_filter = None
