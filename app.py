@@ -17,7 +17,6 @@ VERSION = 1.04
 @app.route('/')
 def stocks(status=None, filter_id=None):
     find = None
-    filter_fscore = False
     stat = {}
     if status == 'starred':
         find = {'starred': True}
@@ -27,8 +26,6 @@ def stocks(status=None, filter_id=None):
         find = {'$or': [{'starred': True}, {'owned': True}]}
     elif status == 'doubtful':
         find = {'doubtful': True}
-    elif status == 'fscore':
-        filter_fscore = True
     order_by = request.args.get('order_by', 'expected_rate')
     ordering = request.args.get('ordering', 'desc')
     filter_id = request.args.get('filter_id', None)
@@ -42,7 +39,6 @@ def stocks(status=None, filter_id=None):
         ordering=ordering, find=find, 
         filter_by_expected_rate=find==None, 
         filter_bad=status!='bad', 
-        filter_fscore=filter_fscore,
         filter_options=(current_filter.filter_options if current_filter else []))
 
     if status in ['owned', 'starred', 'starredorowned']:

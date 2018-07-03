@@ -46,6 +46,7 @@ def parse_snowball_stocks(filter_bad=True, only_starred_owned=False):
         if stock.get('code', None):
             parse_snowball(stock['code'])
             time.sleep(random.random())
+    db.update_ranks()
 
 
 def tree_from_url(url):

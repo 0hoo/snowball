@@ -1,4 +1,4 @@
-from typing import Tuple, List, Optional
+from typing import Tuple, List, Optional, Dict
 from types import FunctionType
 
 from datetime import datetime
@@ -47,6 +47,7 @@ available_filter_options = [
     FilterOption(key='roe_max_diff', title='ROE최대최소차', morethan=None, value=None, is_boolean=False),
     FilterOption(key='last_four_years_roe_max_diff', title='최근4년ROE최대최소차', morethan=None, value=None, is_boolean=False),
     FilterOption(key='calculable_pbr_count', title='계산가능PBR수', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='rank_last_year_gpa', title='GPA순위', morethan=None, value=None, is_boolean=False),
     FilterOption(key='is_five_years_record_low', title='5년최저PBR(참)', morethan=None, value=None, is_boolean=True),
     FilterOption(key='has_consensus', title='컨센서스있음(참)', morethan=None, value=None, is_boolean=True),
     FilterOption(key='is_positive_consensus_roe', title='컨센서스>fROE(참)', morethan=None, value=None, is_boolean=True),
@@ -335,6 +336,10 @@ class Stock(UserDict):
     def TAs(self):
         return self.year_stat('TAs', exclude_future=False)
 
+    @property
+    def rank_last_year_gpa(self):
+        return self.get('rank_last_year_gpa')
+
     def calc_gpa(self, gp):
         if not gp[1]:
             return None
@@ -479,22 +484,27 @@ def make_filter_option_func(filter_option):
     return filter_option_func
 
 
-def all_stocks(order_by='title', ordering='asc', find=None, filter_by_expected_rate=True, filter_bad=True, filter_fscore=False, filter_options=[]) -> List[Stock]:
-    dicts = db.stocks.find(find) if find else db.stocks.find()
+def update_ranks():
+    dicts = db.stocks.find()
+    dicts = sorted([Stock(s) for s in dicts], key=partial(attr_or_key_getter, 'last_year_gpa'), reverse=True)
+    for idx, stock in enumerate(dicts):
+        stock['rank_last_year_gpa'] = idx + 1
+        save_stock(stock)
+
+
+def all_stocks(order_by='title', ordering='asc', find=None, filter_by_expected_rate=True, filter_bad=True, filter_options=[]) -> List[Stock]:
+    stocks = [Stock(dict) for dict in (db.stocks.find(find) if find else db.stocks.find())]
 
     filter_funcs = []
 
     if filter_by_expected_rate:
-        filter_by_expected_rate_func = lambda s: (Stock(s).expected_rate > 0 and filter_bad) or (Stock(s).expected_rate < 0 and not filter_bad)
+        filter_by_expected_rate_func = lambda s: (s.expected_rate > 0 and filter_bad) or (s.expected_rate < 0 and not filter_bad)
         filter_funcs.append(filter_by_expected_rate_func)
     
-    if filter_fscore:
-        filter_funcs.append(lambda s: (Stock(s).latest_fscore == 3) and filter_by_expected_rate_func(s))
-
     for filter_option in filter_options:
         filter_funcs.append(make_filter_option_func(filter_option))
 
-    return sorted([Stock(s) for s in dicts if all(list(map(FunctionType.__call__, filter_funcs, repeat(s))))],
+    return sorted([s for s in stocks if all(list(map(FunctionType.__call__, filter_funcs, repeat(s))))],
         key=partial(attr_or_key_getter, order_by), reverse=(ordering != 'asc'))
 
 
