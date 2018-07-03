@@ -490,6 +490,10 @@ def update_ranks():
     for idx, stock in enumerate(dicts):
         stock['rank_last_year_gpa'] = idx + 1
         save_stock(stock)
+    dicts = sorted([Stock(s) for s in dicts], key=partial(attr_or_key_getter, 'agg_value'), reverse=True)
+    for idx, stock in enumerate(dicts):
+        stock['agg_rank'] = idx + 1
+        save_stock(stock)    
 
 
 def all_stocks(order_by='title', ordering='asc', find=None, filter_by_expected_rate=True, filter_bad=True, filter_options=[]) -> List[Stock]:

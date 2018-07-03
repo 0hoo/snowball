@@ -159,6 +159,10 @@ Snowball
                     변동
                 </th>
                 <th>
+                    <a href="{{ url_for('stocks', status=status) }}?order_by=agg_rank&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">시총</a>
+                    {% if order_by == 'agg_rank' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </th>
+                <th>
                     <a href="{{ url_for('stocks', status=status) }}?order_by=per&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">PER</a>
                     {% if order_by == 'per' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
                 </th>
@@ -204,6 +208,7 @@ Snowball
                     <td><a href="{{ url_for('stock', code=stock.code) }}">{{ stock.title }}</a></td>
                     <td class="{{ stock.price_color }}">{{ stock.price_arrow }} {{ stock.current_price|round|int }}</td>
                     <td class="{{ stock.price_color }}">{{ stock.price_sign }}{{ '%.2f'|format(stock.rate_diff) }}%</td>
+                    <td>{{ stock.agg_rank }}</td>
                     <td>{{ stock.per }}</td>
                     <td>{{ stock.pbr }}</td>
                     <td>{{ stock.dividend_rate }}</td>

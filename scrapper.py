@@ -81,6 +81,11 @@ def parse_basic(code):
     trade_volume = parse_float(tree.xpath('//*[@id="topWrap"]/div[1]/ul[2]/li[5]/span[1]')[0].text)
     trade_value = parse_float(tree.xpath('//*[@id="topWrap"]/div[1]/ul[2]/li[6]/span')[0].text)
 
+    #agg_rank = tree.xpath('//*[@id="stockContent"]/ul[2]/li[2]/dl[2]/dd/span[2]')[0].text
+    #agg_rank = int(agg_rank[1:])
+
+    agg_value = parse_float(tree.xpath('//*[@id="stockContent"]/ul[2]/li[2]/dl[2]/dd')[0].text)
+
     print('종목명: {title} 현재가: {price}'.format(title=title, price=price))
 
     stock = {
@@ -93,7 +98,8 @@ def parse_basic(code):
         'pbr': pbr,
         'trade_volume': trade_volume,
         'trade_value': trade_value,
-        'exchange': exchange
+        'exchange': exchange,
+        'agg_value': agg_value,
     }
     db.save_stock(stock)
     return True
