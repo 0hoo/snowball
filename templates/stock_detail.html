@@ -55,6 +55,9 @@ function lineChart(elementId, label, labels, data, color) {
       {% endif %}
       <div class="sub header">{{ stock.code }}
         | <a href="{{ url_for('stock_records', code=stock.code) }}">가격분석</a>
+        <div class="ui label">PBR: {{ stock.rank_pbr }}위</div>
+        <div class="ui label">PER: {{ stock.rank_per }}위</div>
+        <div class="ui label">GPA: {{ stock.rank_last_year_gpa }}위</div>
       </div>
   </div>
 </h3>

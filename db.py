@@ -48,6 +48,7 @@ available_filter_options = [
     FilterOption(key='last_four_years_roe_max_diff', title='최근4년ROE최대최소차', morethan=None, value=None, is_boolean=False),
     FilterOption(key='calculable_pbr_count', title='계산가능PBR수', morethan=None, value=None, is_boolean=False),
     FilterOption(key='rank_last_year_gpa', title='GPA순위', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='agg_rank', title='시총순위', morethan=None, value=None, is_boolean=False),
     FilterOption(key='is_five_years_record_low', title='5년최저PBR(참)', morethan=None, value=None, is_boolean=True),
     FilterOption(key='has_consensus', title='컨센서스있음(참)', morethan=None, value=None, is_boolean=True),
     FilterOption(key='is_positive_consensus_roe', title='컨센서스>fROE(참)', morethan=None, value=None, is_boolean=True),
@@ -365,6 +366,10 @@ class Stock(UserDict):
         if not v or not v[0]:
             return 0
         return v[0]
+
+    @property
+    def agg_rank(self):
+        return self.get('agg_rank')
         
     def expected_rate_by_price(self, price: int) -> float:
         return self.calc_expected_rate(self.calc_future_bps, FUTURE, price=price)
