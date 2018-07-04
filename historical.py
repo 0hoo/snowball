@@ -1,21 +1,23 @@
 from typing import List, Optional, Tuple
-from datetime import datetime
+from datetime import datetime, timedelta
 from collections import namedtuple
 from statistics import mean
 import itertools
-import pandas as pd
 
-import fix_yahoo_finance as yf
+import urllib.request
+import json
 
 from db import Stock
+import db
 
 
-yf.pdr_override()
+KAKAO_DAY_CANDLES = "http://stock.kakao.com/api/securities/KOREA-A%s/day_candles.json?limit=%d&to=%s"
 
 
 now = datetime.now()
 THIS_YEAR = now.year
 TODAY = now.strftime('%Y-%m-%d')
+YESTERDAY = (now - timedelta(days=1)).strftime('%Y-%m-%d')
 TWO_YEARS_AGO = now.replace(year=now.year-2, month=1, day=1).strftime('%Y-%m-%d')
 
 
@@ -23,6 +25,40 @@ Record = namedtuple('Record', ['date', 'price', 'expected_rate', 'bps', 'fROE'])
 YearStat = namedtuple('YearStat', ['year', 'high_price', 'low_price', 'high_expected_rate', 'low_expected_rate', 'bps', 'fROE'])
 Event = namedtuple('Event', ['date', 'record', 'buy'])
 EventStat = namedtuple('EventStat', ['buy_count', 'sell_count', 'profit'])
+
+
+def parse_date(date_str: str) -> datetime:
+    return datetime.strptime(date_str.split('T')[0], '%Y-%m-%d')
+
+
+def load_kakao_json(code: str, date: str=YESTERDAY) -> List[dict]:
+    url = KAKAO_DAY_CANDLES % (code, 90000, date)
+    print(url)
+    urlopen = urllib.request.urlopen(url)
+    data = json.loads(urlopen.read().decode())
+    if 'dayCandles' not in data:
+        return
+
+    return data['dayCandles']
+
+
+def parse_day_candles(code: str, date: str=YESTERDAY):
+    data = load_kakao_json(code, date)
+    prices = [{'code': code, 'price': d['tradePrice'], 'date': parse_date(d['date'])} for d in data]
+
+    first_date = prices[-1]['date']
+    if first_date.month != 1 and first_date.day != 1:
+        yesterday_of_first = first_date - timedelta(days=1)
+        data = load_kakao_json(code, date=yesterday_of_first.strftime('%Y-%m-%d'))
+        old = [{'code': code, 'price': d['tradePrice'], 'date': parse_date(d['date'])} for d in data]
+        prices = old + prices
+
+    latest = db.get_latest_price(code)
+    if latest:
+        prices = [p for p in prices if p['date'] > latest['date']]
+    
+    if prices:
+        db.save_prices(prices)
 
 
 def make_record(date, price, bps, stock) -> Record:
@@ -39,17 +75,22 @@ def make_record(date, price, bps, stock) -> Record:
     return Record(date=date, price=price, expected_rate=expected_rate, bps=bps, fROE=future_roe)    
 
 
-def records_by_yahoo(stock: Stock) -> List[Record]:
-    exchange = stock.get('exchange', '')
-    yahoo_code = str(stock['code']) + ('.KS' if exchange == '코스피' else '.KQ')
-    yahoo_prices = yf.download(yahoo_code, start=TWO_YEARS_AGO, end=TODAY)
-    print(yahoo_prices)
-    keys = yahoo_prices.reset_index()['Date'].tolist()
-    values = yahoo_prices['Close'].tolist()
-    prices = [(pd.to_datetime(p[0]), p[1]) for p in zip(keys, values)]
+def build_records(stock: Stock) -> List[Record]:
+    prices = db.get_prices(stock['code'])
+    if not prices:
+        parse_day_candles(stock['code'])
+        prices = db.get_prices(stock['code'])
+    else:
+        last_date = prices[-1]['date']
+        if last_date.strftime('%Y-%m-%d') != YESTERDAY:
+            prices = db.get_prices(stock['code'])
+    
+    if not prices:
+        return
+    
     BPSs = {b[0]: b[1] for b in stock.year_stat('BPSs', exclude_future=True)}
 
-    return [make_record(p[0], p[1], BPSs.get(p[0].year-1), stock) for p in prices]
+    return [make_record(p['date'], p['price'], BPSs.get(p['date'].year-1), stock) for p in prices]
 
 
 def make_year_stat(year: int, records: List[Record]) -> YearStat:
@@ -65,7 +106,7 @@ def make_year_stat(year: int, records: List[Record]) -> YearStat:
 
 
 def records_by_year(stock: Stock) -> List[Tuple[YearStat, List[Record]]]:
-    records = records_by_yahoo(stock)
+    records = build_records(stock)
     by_year = [(k, list(list(g))) for k, g in itertools.groupby(records, lambda r: r.date.year)]
     by_year = [(make_year_stat(year, records), records) for year, records in by_year]
     events = simulate(by_year)

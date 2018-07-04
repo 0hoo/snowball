@@ -139,9 +139,9 @@ def stock(code):
 def stock_records(code):
     import historical
     stock = db.stock_by_code(code)
-    records = historical.records_by_yahoo(stock)
+    #records = historical.records_by_yahoo(stock)
     records_by_year = historical.records_by_year(stock)
-    return render_template('stock_records.html', VERSION=VERSION, stock=stock, records=records, records_by_year=records_by_year)
+    return render_template('stock_records.html', VERSION=VERSION, stock=stock, records_by_year=records_by_year)
 
 
 @app.route('/stock/refresh/<code>')

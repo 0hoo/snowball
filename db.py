@@ -559,3 +559,15 @@ def remove_filter(filter_id):
 
 def remove_stock(code):
     db.stocks.remove({'code': code})
+
+
+def save_prices(prices):
+    db.prices.insert_many(prices)
+
+
+def get_latest_price(code):
+    return db.prices.find_one({'code': code}, sort=[('date', DESCENDING)])
+
+
+def get_prices(code):
+    return list(db.prices.find({'code': code}, sort=[('date', ASCENDING)]))
