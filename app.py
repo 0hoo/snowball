@@ -17,7 +17,7 @@ VERSION = 1.05
 @app.route('/stocks')
 @app.route('/stocks/<status>')
 @app.route('/')
-def stocks(status=None, filter_id=None):
+def stocks(status=None):
     find = None
     stat = {}
     if status == 'starred':
@@ -41,7 +41,11 @@ def stocks(status=None, filter_id=None):
         ordering=ordering, find=find, 
         filter_by_expected_rate=find==None, 
         filter_bad=status!='bad', 
-        filter_options=(current_filter.filter_options if current_filter else []))
+        filter_options=(current_filter.filter_options if current_filter else []),
+        rank_options=(current_filter.rank_options if current_filter else []))
+
+    if current_filter and current_filter.rank_options:
+        order_by = None
 
     if status in ['owned', 'starred', 'starredorowned']:
         stat['low_pbr'] = len([stock for stock in stocks if stock.pbr <= 1])
@@ -58,7 +62,7 @@ def stocks(status=None, filter_id=None):
 
     return render_template('stocks.html', VERSION=VERSION, stocks=stocks, order_by=order_by, ordering=ordering, status=status,
         available_filter_options=db.available_filter_options, filters=filters,
-        current_filter=current_filter, stat=stat)
+        current_filter=current_filter, stat=stat, available_rank_options=db.available_rank_options)
 
 
 @app.route('/stocks/filter/new')
@@ -117,11 +121,41 @@ def stocks_add_filter_option(filter_id):
 @app.route('/stocks/filter/<filter_id>/remove_filter_option/<filter_option_id>')
 def stocks_remove_filter_option(filter_id, filter_option_id):
     current_filter = db.filter_by_id(filter_id)
-    remain = [o for o in current_filter.get('options', []) if o['_id'] != ObjectId(filter_option_id)]
+    remain = [o for o in current_filter.get('options', []) if o.get('_id', None) != ObjectId(filter_option_id)]
     current_filter['options'] = remain
     db.save_filter(current_filter)
 
     return redirect(url_for('stocks', filter_id=current_filter['_id']))
+
+
+@app.route('/stocks/filter/<filter_id>/add_rank_option')
+def stocks_add_rank_option(filter_id):
+    rank_option_key = request.args.get('key', None)
+    if not rank_option_key:
+        return redirect(url_for('stocks', filter_id=filter_id))
+    options = [r for r in db.available_rank_options if r.key == rank_option_key]
+    if options:
+        rank_option_to_add = options[0]
+        current_filter = db.filter_by_id(filter_id)
+        options = current_filter.get('options', [])
+        options.append(rank_option_to_add._asdict())
+        db.save_filter(current_filter)
+
+        return redirect(url_for('stocks', filter_id=filter_id))
+
+    
+@app.route('/stocks/filter/<filter_id>/remove_rank_option')
+def stocks_remove_rank_option(filter_id):
+    rank_option_key = request.args.get('key', None)
+    if not rank_option_key:
+        return redirect(url_for('stocks', filter_id=filter_id))
+    current_filter = db.filter_by_id(filter_id)
+    options = current_filter.get('options', [])
+    options = [o for o in options if o['key'] != rank_option_key]
+    current_filter['options'] = options
+    db.save_filter(current_filter)
+
+    return redirect(url_for('stocks', filter_id=filter_id))
 
 
 @app.route('/stocks/fill')

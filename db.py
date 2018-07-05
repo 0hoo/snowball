@@ -17,6 +17,7 @@ FScore = namedtuple('FScore', ['total_issued_stock', 'profitable', 'cfo'])
 YearStat = namedtuple('YearStat', ['year', 'value', 'calculated'])
 Quarter = namedtuple('Quarter', ['year', 'number', 'estimated'])
 FilterOption = namedtuple('Filter', ['key', 'title', 'morethan', 'value', 'is_boolean'])
+RankOption = namedtuple('Rank', ['key', 'title', 'asc', 'is_rankoption'])
 
 
 YEAR_STAT = Tuple[int, int]
@@ -32,6 +33,14 @@ FUTURE = 10
 TARGET_RATE = 15
 THIS_YEAR = datetime.now().year
 LAST_YEAR = THIS_YEAR - 1
+
+
+available_rank_options = [
+    RankOption(key='rank_pbr', title='PBR', asc=True, is_rankoption=True),
+    RankOption(key='rank_per', title='PER', asc=True, is_rankoption=True),
+    RankOption(key='rank_last_year_gpa', title='GPA', asc=False, is_rankoption=True),
+    RankOption(key='rank_dividend', title='배당', asc=False, is_rankoption=True),
+]
 
 
 available_filter_options = [
@@ -65,7 +74,19 @@ class Filter(UserDict):
             title=o['title'], 
             morethan=o['morethan'], 
             value=o['value'], 
-            is_boolean=o.get('is_boolean', False)) for o in self['options']]
+            is_boolean=o.get('is_boolean', False)) for o in self['options'] if not o.get('is_rankoption', False)]
+
+    @property
+    def dict_filter_options(self) -> List[dict]:
+        return [o for o in self['options'] if not o.get('is_rankoption', False)]
+
+    @property
+    def rank_options(self) -> List[RankOption]:
+        return [RankOption(
+            key=o['key'], 
+            title=o['title'], 
+            asc=o['asc'], 
+            is_rankoption=True) for o in self['options'] if o.get('is_rankoption', False)] 
 
 
 class Stock(UserDict):
@@ -341,6 +362,10 @@ class Stock(UserDict):
     def rank_last_year_gpa(self):
         return self.get('rank_last_year_gpa')
 
+    @property
+    def rank_pbr(self):
+        return self.get('rank_pbr')
+
     def calc_gpa(self, gp):
         if not gp[1]:
             return None
@@ -498,10 +523,22 @@ def update_ranks():
     dicts = sorted([Stock(s) for s in dicts], key=partial(attr_or_key_getter, 'agg_value'), reverse=True)
     for idx, stock in enumerate(dicts):
         stock['agg_rank'] = idx + 1
-        save_stock(stock)    
+        save_stock(stock)
+    dicts = sorted([Stock(s) for s in dicts], key=partial(attr_or_key_getter, 'pbr'), reverse=False)
+    for idx, stock in enumerate(dicts):
+        stock['rank_pbr'] = idx + 1
+        save_stock(stock)
+    dicts = sorted([Stock(s) for s in dicts], key=partial(attr_or_key_getter, 'per'), reverse=False)
+    for idx, stock in enumerate(dicts):
+        stock['rank_per'] = idx + 1
+        save_stock(stock)
+    dicts = sorted([Stock(s) for s in dicts], key=partial(attr_or_key_getter, 'dividend_rate'), reverse=True)
+    for idx, stock in enumerate(dicts):
+        stock['rank_dividend'] = idx + 1
+        save_stock(stock)
 
 
-def all_stocks(order_by='title', ordering='asc', find=None, filter_by_expected_rate=True, filter_bad=True, filter_options=[]) -> List[Stock]:
+def all_stocks(order_by='title', ordering='asc', find=None, filter_by_expected_rate=True, filter_bad=True, filter_options=[], rank_options=[]) -> List[Stock]:
     stocks = [Stock(dict) for dict in (db.stocks.find(find) if find else db.stocks.find())]
 
     filter_funcs = []
@@ -513,8 +550,15 @@ def all_stocks(order_by='title', ordering='asc', find=None, filter_by_expected_r
     for filter_option in filter_options:
         filter_funcs.append(make_filter_option_func(filter_option))
 
-    return sorted([s for s in stocks if all(list(map(FunctionType.__call__, filter_funcs, repeat(s))))],
+    stocks = sorted([s for s in stocks if all(list(map(FunctionType.__call__, filter_funcs, repeat(s))))],
         key=partial(attr_or_key_getter, order_by), reverse=(ordering != 'asc'))
+
+    if rank_options:
+        for stock in stocks:
+            stock['total_rank'] = sum([stock.get(r.key) for r in rank_options])
+        return sorted(stocks, key=partial(attr_or_key_getter, 'total_rank'), reverse=False)
+
+    return stocks
 
 
 def stock_by_code(code) -> Stock:

@@ -97,7 +97,7 @@ Snowball
         </div>
     </form>
     <div class="ui list">
-        {% for filter_option in current_filter.options %}
+        {% for filter_option in current_filter.dict_filter_options %}
         <span class="ui label black">
             {{ filter_option.title }}
             {% if not filter_option.is_boolean %} 
@@ -124,7 +124,7 @@ Snowball
                 </select>
             </div>
             <div class="field">
-                <input type="number" name="filter_option_value" id="filter_option_value" placeholder="값">
+                <input type="text" name="filter_option_value" id="filter_option_value" placeholder="값">
             </div>
             <div class="field">
                 <select class="ui fluid dropdown" name="filter_option_morethan" id="filter_option_morethan">
@@ -135,6 +135,20 @@ Snowball
             <div class="field">
                 <button class="ui button" type="submit">필터링 옵션 추가</button>
             </div>
+        </div>
+
+        <div class="field">
+            {% for rank_option in available_rank_options %}
+                {% if rank_option in current_filter.rank_options %}
+                    <a href="{{ url_for('stocks_remove_rank_option', filter_id=current_filter._id) }}?key={{ rank_option.key }}">
+                        <span class="ui label blue">{{ rank_option.title }} 랭킹</span>
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('stocks_add_rank_option', filter_id=current_filter._id) }}?key={{ rank_option.key }}">
+                        <span class="ui label">{{ rank_option.title }} 랭킹</span>
+                    </a>
+                {% endif %}
+            {% endfor %}    
         </div>
         <div>{{ stocks|count }}종목</div>
     </form>
@@ -155,9 +169,11 @@ Snowball
                     <a href="{{ url_for('stocks', status=status) }}?order_by=current_price&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">현재가</a>
                     {% if order_by == 'current_price' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
                 </th>
+                {% if not current_filter.rank_options %}
                 <th>
                     변동
                 </th>
+                {% endif %}
                 <th>
                     <a href="{{ url_for('stocks', status=status) }}?order_by=agg_rank&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">시총</a>
                     {% if order_by == 'agg_rank' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
@@ -199,6 +215,11 @@ Snowball
                 </th>
                 <th>
                 </th>
+                {% if current_filter.rank_options %}
+                <th>
+                    통합
+                </th>
+                {% endif %}
             </tr>
             </thead>
             <tbody>
@@ -207,11 +228,26 @@ Snowball
                     <td>{{ stock.code }}</td>
                     <td><a href="{{ url_for('stock', code=stock.code) }}">{{ stock.title }}</a></td>
                     <td class="{{ stock.price_color }}">{{ stock.price_arrow }} {{ stock.current_price|round|int }}</td>
+                    {% if not current_filter.rank_options %}
                     <td class="{{ stock.price_color }}">{{ stock.price_sign }}{{ '%.2f'|format(stock.rate_diff) }}%</td>
+                    {% endif %}
                     <td>{{ stock.agg_rank }}</td>
-                    <td>{{ stock.per }}</td>
-                    <td>{{ stock.pbr }}</td>
-                    <td>{{ stock.dividend_rate }}</td>
+                    <td>{{ stock.per }}
+                        {% if current_filter.rank_options %}
+                        ({{ stock.rank_per }})
+                        {% endif %}
+                    </td>
+                    <td>{{ stock.pbr }}
+                        {% if current_filter.rank_options %}
+                        ({{ stock.rank_pbr }})
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ stock.dividend_rate }}
+                        {% if current_filter.rank_options %}
+                        ({{ stock.rank_dividend }})
+                        {% endif %}
+                    </td>
                     <td>
                          <div class="ui label">
                              {{ '%.2f'|format(stock.future_roe or 0) }}
@@ -261,6 +297,9 @@ Snowball
                         <i class="icon flag red"></i>
                         {% endif %}
                     </td>
+                    {% if current_filter.rank_options %}
+                    <td>{{ stock.total_rank }}</td>
+                    {% endif %}
                 </tr>
                 {% endfor %}
             </tbody>
