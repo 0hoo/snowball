@@ -20,6 +20,9 @@ NAVER_YEARLY = "http://companyinfo.stock.naver.com/v1/company/ajax/cF1001.aspx?c
 NAVER_QUARTERLY = "http://companyinfo.stock.naver.com/v1/company/ajax/cF1001.aspx?cmp_cd=%s&fin_typ=0&freq_typ=Q"
 #NAVER_YEARLY_JSON = "http://companyinfo.stock.naver.com/v1/company/cF3002.aspx?cmp_cd=%s&frq=0&rpt=0&finGubun=MAIN&frqTyp=0&cn="
 NAVER_JSON1 = 'http://companyinfo.stock.naver.com/v1/company/cF4002.aspx?cmp_cd=%s&frq=0&rpt=1&finGubun=MAIN&frqTyp=0&cn='
+NAVER = 'https://finance.naver.com/item/main.nhn?code='
+
+
 LAST_YEAR = str(datetime.now().year - 1)
 
 
@@ -49,8 +52,11 @@ def parse_snowball_stocks(filter_bad=True, only_starred_owned=False):
     db.update_ranks()
 
 
-def tree_from_url(url):
-    return html.fromstring(requests.get(url).content)
+def tree_from_url(url, decode=None):
+    content = requests.get(url).content
+    if decode:
+        content = content.decode(decode)
+    return html.fromstring(content)
 
 
 def parse_basic(code):
@@ -269,3 +275,42 @@ def parse_json(code):
     }
     print('GPs: {}'.format(GPs))
     stock = db.save_stock(stock)
+
+
+def parse_etf(code, tag):
+    url = NAVER + code
+    tree = tree_from_url(url, 'euc-kr')
+
+    title = tree.xpath('//*[@id="middle"]/div[1]/div[1]/h2/a')[0].text
+    month1 = parse_float(tree.xpath('//*[@id="tab_con1"]/div[5]/table/tbody/tr[1]/td/em')[0].text.strip())
+    month3 = parse_float(tree.xpath('//*[@id="tab_con1"]/div[5]/table/tbody/tr[2]/td/em')[0].text.strip())
+    month6 = parse_float(tree.xpath('//*[@id="tab_con1"]/div[5]/table/tbody/tr[3]/td/em')[0].text.strip())
+    month12 = parse_float(tree.xpath('//*[@id="tab_con1"]/div[5]/table/tbody/tr[4]/td/em')[0].text.strip())
+    company = tree.xpath('//table[contains(@class, "tbl_type1")]//td/span/text()')[2]
+
+    cost = parse_float(tree.xpath('//table[contains(@class, "tbl_type1")]//td/em/text()')[0])
+
+    tags = tag.split(',')
+
+    db.save_etf({
+        'code': code,
+        'title': title,
+        'company': company,
+        'month1': month1,
+        'month3': month3,
+        'month6': month6,
+        'month12': month12,
+        'cost': cost,
+        'tags': tags
+    })
+
+def parse_etfs():
+    f = open('dual_etf.txt', 'r')
+    lines = f.readlines()
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        words = line.split(' ')
+        parse_etf(words[-1], words[0])
+    f.close()

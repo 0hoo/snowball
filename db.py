@@ -89,6 +89,16 @@ class Filter(UserDict):
             is_rankoption=True) for o in self['options'] if o.get('is_rankoption', False)] 
 
 
+class ETF(UserDict):
+    @property
+    def object_id(self) -> str:
+        return self['_id']
+
+    @property
+    def tags(self) -> str:
+        return ', '.join(self.get('tags'))
+
+
 class Stock(UserDict):
     def __hash__(self):
         return hash(frozenset(self.items()))
@@ -615,3 +625,23 @@ def get_latest_price(code):
 
 def get_prices(code):
     return list(db.prices.find({'code': code}, sort=[('date', ASCENDING)]))
+
+
+def save_etf(etf) -> ETF:
+    exist = db.etf.find_one({'code': etf['code']})
+    if exist:
+        print("update:" ,etf)
+        db.etf.update_one({'code': exist['code']}, {'$set': etf})
+    else:
+        db.etf.insert_one(etf)
+    return etf_by_code(etf['code'])
+
+
+def etf_by_code(code) -> ETF:
+    return ETF(db.etf.find_one({'code': code}))
+
+
+def all_etf(order_by='title', ordering='asc'):
+    ETFs = [ETF(dict) for dict in db.etf.find()]
+    ETFs = sorted(ETFs, key=partial(attr_or_key_getter, order_by), reverse=(ordering != 'asc'))
+    return ETFs

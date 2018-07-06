@@ -1,4 +1,5 @@
 from datetime import datetime
+from collections import defaultdict
 
 from flask import Flask, request, render_template, redirect, url_for
 from bson.objectid import ObjectId
@@ -11,7 +12,8 @@ from utils import mean_or_zero
 app = Flask(__name__)
 
 
-VERSION = 1.05
+VERSION = 1.06
+INTEREST = 2.25
 
 
 @app.route('/stocks')
@@ -274,6 +276,53 @@ def add_stock():
 def remove_stock(code):
     db.remove_stock(code)
     return redirect(url_for('stocks'))
+
+
+class ETFTag:
+    def __init__(self, tag, etfs=[]):
+        self.tag = tag
+        self.etfs = sorted(etfs, key=lambda e: e.get('month3', 0), reverse=True)
+
+    @property
+    def month1(self):
+        return mean_or_zero([etf['month1'] for etf in self.etfs])
+
+    @property
+    def month3(self):
+        return mean_or_zero([etf['month3'] for etf in self.etfs])
+    
+    @property
+    def month6(self):
+        return mean_or_zero([etf['month6'] for etf in self.etfs])
+
+    @property
+    def month12(self):
+        return mean_or_zero([etf['month12'] for etf in self.etfs])
+
+
+@app.route('/etfs')
+def etfs():
+    order_by = request.args.get('order_by', 'month3')
+    ordering = request.args.get('ordering', 'desc')
+    etfs = db.all_etf(order_by=order_by, ordering=ordering)
+    bond_etfs = ['148070', '152380']
+    tags = defaultdict(list)
+    for etf in etfs:
+        for tag in etf.get('tags'):
+            tags[tag].append(etf)
+
+    #1 / 0
+    tags = {k: ETFTag(k, v) for k, v in tags.items()}
+    
+    stat = {}
+    etfs_by_month3 = [etf for etf in db.all_etf(order_by='month3', ordering='desc') if etf['month3'] != 0]
+    no_bond_etfs = sorted([etf for etf in etfs_by_month3 if etf['code'] not in bond_etfs], key=lambda x: x.get('month3', 0), reverse=True)
+    stat['absolute_momentum_month3_avg'] = mean_or_zero([etf['month3'] for etf in no_bond_etfs])
+    stat['absolute_momentum_high'] = no_bond_etfs[0]
+    stat['relative_momentum_etf'] = etfs_by_month3[0]
+    tags = sorted(tags.values(), key=lambda t: t.month3, reverse=True)
+    
+    return render_template('etfs.html', VERSION=VERSION, INTEREST=INTEREST, etfs=etfs, order_by=order_by, ordering=ordering, stat=stat, tags=tags)
 
 
 if __name__ == '__main__':
