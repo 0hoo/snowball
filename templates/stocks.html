@@ -1,54 +1,49 @@
-{% extends "base.html" %}
+{% extends "base.html" %} 
 
 {% block title %}
 
-{% if status == 'owned' %}
-보유 - Snowball
-{% elif status == 'starred' %}
-관심 - Snowball
-{% elif status == 'starredorowned' %}
-보유|관심 - Snowball
-{% elif status == 'doubtful' %}
-데이터의심 - Snowball
-{% elif status == 'bad' %}
-마이너스 - Snowball
-{% else %}
-Snowball
-{% endif %}
+{% if status == 'owned' %} 보유 - Snowball 
+{% elif status == 'starred' %} 관심 -Snowball 
+{% elif status == 'starredorowned' %} 보유|관심 - Snowball 
+{% elif status == 'doubtful' %} 데이터의심 - Snowball 
+{% elif status == 'bad' %} 마이너스 - Snowball
+{% else %} Snowball
+{% endif %} 
 
-{% endblock %}
+{% endblock %} 
 
 {% block javascript %}
-    $(document).ready(function() {
-        $('#filter_name').keyup(function() {
-            var value = $(this).val();
-            console.log(value);
-            $('#hidden_filter_name').val(value);
-        });
-        $('#select_filter_option').change(function() {
-            var selected = $('#select_filter_option option:selected').text();
-            if (selected.endsWith('(참)')) {
-                console.log('!!');
-                $('#filter_option_value').prop('disabled', true);
-            } else {
-                $('#filter_option_value').prop('disabled', false);
-            }
-            console.log(selected);
-        }); 
-    });
-{% endblock %}
+
+$(document).ready(function(){ 
+    $('#filter_name').keyup(function() { 
+        var value = $(this).val(); 
+        $('#hidden_filter_name').val(value);
+    }); 
+    $('#select_filter_option').change(function() { 
+        var selected = $('#select_filter_option option:selected').text();
+        if (selected.endsWith('(참)')) { 
+            $('#filter_option_value').prop('disabled', true); } 
+        else { 
+            $('#filter_option_value').prop('disabled',false); 
+        } 
+        console.log(selected); 
+    }); 
+}); 
+
+{% endblock %} 
 
 {% block content %}
 <style>
-  #stocks-table thead tr:nth-child(1) {
-    padding-top:
-  }
-  #stocks-table thead tr:nth-child(1) th {
-    position: sticky;
-    top: 43px;
-    padding-top: 0.92857143em;
-    background-color: #F9FAFB;
-  }
+    #stocks-table thead tr:nth-child(1) {
+        padding-top:
+    }
+
+    #stocks-table thead tr:nth-child(1) th {
+        position: sticky;
+        top: 43px;
+        padding-top: 0.92857143em;
+        background-color: #F9FAFB;
+    }
 </style>
 
 {% if not current_filter %}
@@ -56,18 +51,18 @@ Snowball
     <div class="content">
         Snowball
         <div class="sub header">
-            {{ stocks|count }}종목
-            {% if stat %}
-            <div class="ui label">기대수익률(>=15): {{ stat.high_expected_rate }}종목</div>            
-            <div class="ui label">PBR(<=1): {{ stat.low_pbr }}종목</div>
-            <div class="ui label">FScore(= 3): {{ stat.fscore }}종목</div>
-            <div class="ui label">평균 기대수익률: {{ '%.2f'|format(stat.mean_expected_rate) }}%</div>
-            <div class="ui label">평균 저P기대: {{ '%.2f'|format(stat.mean_expected_rate_by_low_pbr) }}%</div>
-            <div class="ui label">평균 fROE: {{ '%.2f'|format(stat.mean_future_roe) }}%</div>
-            <div class="ui label">평균 분기ROE: {{ '%.2f'|format(stat.mean_qROEs) }}% ({{ stat.qROEs_count }}종목)</div>
-            {% endif %}
+            {{ stocks|count }}종목 {% if stat %}
+            <div class="ui label">기대수익률(>=15): {{ stat.high_expected_rate }}종목</div>
+            <div class="ui label">PBR(
+                <=1): {{ stat.low_pbr }}종목</div>
+                    <div class="ui label">FScore(= 3): {{ stat.fscore }}종목</div>
+                    <div class="ui label">평균 기대수익률: {{ '%.2f'|format(stat.mean_expected_rate) }}%</div>
+                    <div class="ui label">평균 저P기대: {{ '%.2f'|format(stat.mean_expected_rate_by_low_pbr) }}%</div>
+                    <div class="ui label">평균 fROE: {{ '%.2f'|format(stat.mean_future_roe) }}%</div>
+                    <div class="ui label">평균 분기ROE: {{ '%.2f'|format(stat.mean_qROEs) }}% ({{ stat.qROEs_count }}종목)</div>
+                    {% endif %}
+            </div>
         </div>
-    </div>
 </h3>
 <form class="ui form" action="{{ url_for('add_stock') }}" method="post">
     <div class="fields">
@@ -79,8 +74,7 @@ Snowball
         </div>
     </div>
 </form>
-{% endif %}
-{% if current_filter %}
+{% endif %} {% if current_filter %}
 <div class="ui segment">
     <form class="ui form" action="{{ url_for('stocks_save_filter', filter_id=current_filter._id) }}" method="POST">
         <input type="hidden" name="current_filter_id" value="{{ current_filter._id }}">
@@ -99,16 +93,9 @@ Snowball
     <div class="ui list">
         {% for filter_option in current_filter.dict_filter_options %}
         <span class="ui label black">
-            {{ filter_option.title }}
-            {% if not filter_option.is_boolean %} 
-                {{ filter_option.value }}
-                <b>{% if filter_option.morethan %}
-                    이상
-                {% else %}
-                    이하
-                {% endif %}
-            {% endif %}
-            </b> | 
+            {{ filter_option.title }} {% if not filter_option.is_boolean %} {{ filter_option.value }}
+            <b>{% if filter_option.morethan %} 이상 {% else %} 이하 {% endif %} {% endif %}
+            </b> |
             <a href="{{ url_for('stocks_remove_filter_option', filter_id=current_filter._id, filter_option_id=filter_option._id) }}">제거</a>
         </span>
         {% endfor %}
@@ -138,162 +125,141 @@ Snowball
         </div>
 
         <div class="field">
-            {% for rank_option in available_rank_options %}
-                {% if rank_option in current_filter.rank_options %}
-                    <a href="{{ url_for('stocks_remove_rank_option', filter_id=current_filter._id) }}?key={{ rank_option.key }}">
-                        <span class="ui label blue">{{ rank_option.title }} 랭킹</span>
-                    </a>
-                {% else %}
-                    <a href="{{ url_for('stocks_add_rank_option', filter_id=current_filter._id) }}?key={{ rank_option.key }}">
-                        <span class="ui label">{{ rank_option.title }} 랭킹</span>
-                    </a>
-                {% endif %}
-            {% endfor %}    
+            {% for rank_option in available_rank_options %} {% if rank_option in current_filter.rank_options %}
+            <a href="{{ url_for('stocks_remove_rank_option', filter_id=current_filter._id) }}?key={{ rank_option.key }}">
+                <span class="ui label blue">{{ rank_option.title }} 랭킹</span>
+            </a>
+            {% else %}
+            <a href="{{ url_for('stocks_add_rank_option', filter_id=current_filter._id) }}?key={{ rank_option.key }}">
+                <span class="ui label">{{ rank_option.title }} 랭킹</span>
+            </a>
+            {% endif %} {% endfor %}
         </div>
         <div>{{ stocks|count }}종목</div>
     </form>
 </div>
-<br>
-{% endif %}
+<br> {% endif %}
 <div class="ui grid">
     <div class="sixteen wide column">
         <table class="ui very basic compact table" id="stocks-table">
             <thead>
-            <tr>
-                <th>종목코드</th>
-                <th>
-                    <a href="{{ url_for('stocks', status=status) }}?order_by=title&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">종목명</a>
-                    {% if order_by == 'title' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
-                </th>
-                <th>
-                    <a href="{{ url_for('stocks', status=status) }}?order_by=current_price&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">현재가</a>
-                    {% if order_by == 'current_price' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
-                </th>
-                {% if not current_filter.rank_options %}
-                <th>
-                    변동
-                </th>
-                {% endif %}
-                <th>
-                    <a href="{{ url_for('stocks', status=status) }}?order_by=agg_rank&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">시총</a>
-                    {% if order_by == 'agg_rank' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
-                </th>
-                <th>
-                    <a href="{{ url_for('stocks', status=status) }}?order_by=per&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">PER</a>
-                    {% if order_by == 'per' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
-                </th>
-                <th>
-                    <a href="{{ url_for('stocks', status=status) }}?order_by=pbr&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">PBR</a>
-                    {% if order_by == 'pbr' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
-                </th>
-                <th>
-                    <a href="{{ url_for('stocks', status=status) }}?order_by=dividend_rate&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">배당</a>
-                    {% if order_by == 'dividend_rate' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
-                </th>
-                <th>
-                    <a href="{{ url_for('stocks', status=status) }}?order_by=future_roe&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">fROE</a>
-                    {% if order_by == 'future_roe' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
-                </th>
-                <th>
-                    <a href="{{ url_for('stocks', status=status) }}?order_by=expected_rate&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">기대</a>
-                    {% if order_by == 'expected_rate' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
-                </th>
-                <th>
-                    <a href="{{ url_for('stocks', status=status) }}?order_by=expected_rate_by_current_pbr&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">현P기</a>
-                    {% if order_by == 'expected_rate_by_current_pbr' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
-                </th>
-                <th>
-                    <a href="{{ url_for('stocks', status=status) }}?order_by=expected_rate_by_low_pbr&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">저P기</a>
-                    {% if order_by == 'expected_rate_by_low_pbr' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
-                </th>
-                <th>
-                    FScore
-                </th>
-                <th>
-                    <a href="{{ url_for('stocks', status=status) }}?order_by=last_year_gpa&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">GPA</a>
-                    {% if order_by == 'last_year_gpa' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
-                </th>
-                <th>
-                </th>
-                {% if current_filter.rank_options %}
-                <th>
-                    통합
-                </th>
-                {% endif %}
-            </tr>
+                <tr>
+                    <th>종목코드</th>
+                    <th>
+                        <a href="{{ url_for('stocks', status=status) }}?order_by=title&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">종목명</a>
+                        {% if order_by == 'title' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                    </th>
+                    <th>
+                        <a href="{{ url_for('stocks', status=status) }}?order_by=current_price&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">현재가</a>
+                        {% if order_by == 'current_price' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                    </th>
+                    {% if not current_filter.rank_options %}
+                    <th>
+                        변동
+                    </th>
+                    {% endif %}
+                    <th>
+                        <a href="{{ url_for('stocks', status=status) }}?order_by=agg_rank&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">시총</a>
+                        {% if order_by == 'agg_rank' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                    </th>
+                    <th>
+                        <a href="{{ url_for('stocks', status=status) }}?order_by=per&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">PER</a>
+                        {% if order_by == 'per' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                    </th>
+                    <th>
+                        <a href="{{ url_for('stocks', status=status) }}?order_by=pbr&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">PBR</a>
+                        {% if order_by == 'pbr' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                    </th>
+                    <th>
+                        <a href="{{ url_for('stocks', status=status) }}?order_by=dividend_rate&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">배당</a>
+                        {% if order_by == 'dividend_rate' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                    </th>
+                    <th>
+                        <a href="{{ url_for('stocks', status=status) }}?order_by=future_roe&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">fROE</a>
+                        {% if order_by == 'future_roe' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                    </th>
+                    <th>
+                        <a href="{{ url_for('stocks', status=status) }}?order_by=expected_rate&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">기대</a>
+                        {% if order_by == 'expected_rate' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                    </th>
+                    <th>
+                        <a href="{{ url_for('stocks', status=status) }}?order_by=expected_rate_by_current_pbr&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">현P기</a>
+                        {% if order_by == 'expected_rate_by_current_pbr' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                    </th>
+                    <th>
+                        <a href="{{ url_for('stocks', status=status) }}?order_by=expected_rate_by_low_pbr&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">저P기</a>
+                        {% if order_by == 'expected_rate_by_low_pbr' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                    </th>
+                    <th>
+                        FScore
+                    </th>
+                    <th>
+                        <a href="{{ url_for('stocks', status=status) }}?order_by=last_year_gpa&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">GPA</a>
+                        {% if order_by == 'last_year_gpa' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                    </th>
+                    <th>
+                    </th>
+                    {% if current_filter.rank_options %}
+                    <th>
+                        통합
+                    </th>
+                    {% endif %}
+                </tr>
             </thead>
             <tbody>
                 {% for stock in stocks %}
                 <tr>
                     <td>{{ stock.code }}</td>
-                    <td><a href="{{ url_for('stock', code=stock.code) }}">{{ stock.title }}</a></td>
+                    <td>
+                        <a href="{{ url_for('stock', code=stock.code) }}">{{ stock.title }}</a>
+                    </td>
                     <td class="{{ stock.price_color }}">{{ stock.price_arrow }} {{ stock.current_price|round|int }}</td>
                     {% if not current_filter.rank_options %}
                     <td class="{{ stock.price_color }}">{{ stock.price_sign }}{{ '%.2f'|format(stock.rate_diff) }}%</td>
                     {% endif %}
                     <td>{{ stock.agg_rank }}</td>
-                    <td>{{ stock.per }}
-                        {% if current_filter.rank_options %}
-                        ({{ stock.rank_per }})
-                        {% endif %}
+                    <td>{{ stock.per }} {% if current_filter.rank_options %} ({{ stock.rank_per }}) {% endif %}
                     </td>
-                    <td>{{ stock.pbr }}
-                        {% if current_filter.rank_options %}
-                        ({{ stock.rank_pbr }})
-                        {% endif %}
+                    <td>{{ stock.pbr }} {% if current_filter.rank_options %} ({{ stock.rank_pbr }}) {% endif %}
                     </td>
                     <td>
-                        {{ stock.dividend_rate }}
-                        {% if current_filter.rank_options %}
-                        ({{ stock.rank_dividend }})
-                        {% endif %}
+                        {{ stock.dividend_rate }} {% if current_filter.rank_options %} ({{ stock.rank_dividend }}) {% endif %}
                     </td>
                     <td>
-                         <div class="ui label">
-                             {{ '%.2f'|format(stock.future_roe or 0) }}
-                             {% if stock.calculated_roe_count < 4 %}
-                             &nbsp; ({{stock.calculated_roe_count}}/4)
-                             {% endif %}
-                         </div>
-                        {% if 'adjusted_future_roe' in stock and stock['adjusted_future_roe']|float > 0 %}
-                            <div class="ui label yellow">{{ '%.2f'|format(stock.adjusted_future_roe or 0) }}</div>
-                        {% endif %}
+                        <div class="ui label">
+                            {{ '%.2f'|format(stock.future_roe or 0) }} {% if stock.calculated_roe_count
+                            < 4 %} &nbsp; ({{stock.calculated_roe_count}}/4)
+                                {% endif %} </div>
+                                {% if 'adjusted_future_roe' in stock and stock['adjusted_future_roe']|float > 0 %}
+                                <div class="ui label yellow">{{ '%.2f'|format(stock.adjusted_future_roe or 0) }}</div>
+                                {% endif %}
                     </td>
                     <td>
-                        {% if stock.calculable %}
-                            {{ '%.2f'|format(stock.expected_rate or 0) }}
-                        {% endif %}
+                        {% if stock.calculable %} {{ '%.2f'|format(stock.expected_rate or 0) }} {% endif %}
                     </td>
                     <td>
-                        {% if stock.calculable %}
-                            {% if stock.is_five_years_record_low %}<span class="ui label black">{% endif %}
-                            {{ '%.2f'|format(stock.expected_rate_by_current_pbr or 0) }}
-                            {% if stock.low_pbr > stock.pbr %}</span>{% endif %}
-                        {% endif %}
+                        {% if stock.calculable %} {% if stock.is_five_years_record_low %}
+                        <span class="ui label black">{% endif %} {{ '%.2f'|format(stock.expected_rate_by_current_pbr or 0) }} {% if stock.low_pbr > stock.pbr
+                            %}</span>{% endif %} {% endif %}
                     </td>
                     <td>
-                        {% if stock.calculable %}
-                            {% if stock.calculable_pbr_count < 4 %}
-                            <span class="ui label gray">
-                            {% endif %}
-                            {{ '%.2f'|format(stock.expected_rate_by_low_pbr or 0) }}
-                            {% if stock.calculable_pbr_count < 4 %}
-                            </span>
-                            {% endif %}
-                        {% endif %}
+                        {% if stock.calculable %} {% if stock.calculable_pbr_count
+                        < 4 %} <span class="ui label gray">
+                            {% endif %} {{ '%.2f'|format(stock.expected_rate_by_low_pbr or 0) }} {% if stock.calculable_pbr_count
+                            <
+                                4 %} </span>
+                                {% endif %} {% endif %}
                     </td>
                     <td>{{ stock.latest_fscore }}</td>
                     <td>{% if stock.rank_last_year_gpa %}{{ stock.rank_last_year_gpa }}{% endif %}</td>
                     <td>
                         {% if stock.owned %}
-                            <i class="icon heart red"></i>
+                        <i class="icon heart red"></i>
                         {% elif stock.starred %}
-                            <i class="icon star yellow"></i>
-                        {% endif %}
-                        {% if stock.has_note %}
-                            <i class="icon file alternate"></i>
-                        {% endif %}
-                        {% if stock.doubtful %}
+                        <i class="icon star yellow"></i>
+                        {% endif %} {% if stock.has_note %}
+                        <i class="icon file alternate"></i>
+                        {% endif %} {% if stock.doubtful %}
                         <i class="icon flag red"></i>
                         {% endif %}
                     </td>
@@ -304,6 +270,6 @@ Snowball
                 {% endfor %}
             </tbody>
         </table>
+        </div>
     </div>
-</div>
-{% endblock %}
+    {% endblock %}

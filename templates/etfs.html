@@ -1,28 +1,26 @@
-{% extends "base.html" %}
+{% extends "base.html" %} 
 
-{% block title %}
-듀얼모멘텀 ETF
-{% endblock %}
-
+{% block title %} 듀얼모멘텀 ETF {% endblock %} 
 {% block content %}
 <style>
-#stocks-table thead tr:nth-child(1) {
-    padding-top:
-}
-#stocks-table thead tr:nth-child(1) th {
-    position: sticky;
-    top: 43px;
-    padding-top: 0.92857143em;
-    background-color: #F9FAFB;
-}
+    #stocks-table thead tr:nth-child(1) {
+        padding-top:
+    }
+
+    #stocks-table thead tr:nth-child(1) th {
+        position: sticky;
+        top: 43px;
+        padding-top: 0.92857143em;
+        background-color: #F9FAFB;
+    }
 </style>
 
 <h3 class="ui header">
     <div class="content">
         듀얼모멘텀 ETF
         <div class="sub header">
-            {{ etfs|count }}종목 | 절대(3개월최고) 값이 정기예금이자 보다 높으면 매수 낮으면 매도(현금보유) | 매월 상대(최고)의 종목을 매수한다 (기존종목매도)<br>
-            절대(3개월평균)은 평균적 절대 모멘텀을 의미하므로 참고용 | 상대(최고)에 국채 상품이 나오면 현금을 보유하거나 해당 종목 매수
+            {{ etfs|count }}종목 | 절대(3개월최고) 값이 정기예금이자(2.25%) 보다 0.5% 이상 높으면 매수 낮으면 매도(현금보유) | 매월 상대(최고)의 종목을 매수한다 (기존종목매도)
+            <br> 절대(3개월평균)은 평균적 절대 모멘텀을 의미하므로 참고용 | 상대(최고)에 국채 상품이 나오면 현금을 보유하거나 해당 종목 매수
         </div>
         <div class="ui mini statistic {% if stat.absolute_momentum_month3_avg <= INTEREST %}blue{% else %}red{% endif %}">
             <div class="value">
@@ -74,7 +72,7 @@
         </div>
     </div>
     <div class="content">
-           
+
     </div>
 </h3>
 <div class="ui grid">
@@ -117,7 +115,7 @@
                     <td>{{ etf.code }}</td>
                     <td>
                         <a href="http://finance.naver.com/item/main.nhn?code={{ etf.code }}" target="_blank">
-                        {{ etf.title }}
+                            {{ etf.title }}
                         </a>
                     </td>
                     <td>{{ '%.2f'|format(etf.month1) }}</td>
@@ -177,7 +175,7 @@
                     <td>{{ etf.code }}</td>
                     <td>
                         <a href="http://finance.naver.com/item/main.nhn?code={{ etf.code }}" target="_blank">
-                        {{ etf.title }}
+                            {{ etf.title }}
                         </a>
                     </td>
                     <td>{{ '%.2f'|format(etf.month1) }}</td>
@@ -194,4 +192,4 @@
     </div>
 </div>
 
-{% endblock %}    
+{% endblock %}
