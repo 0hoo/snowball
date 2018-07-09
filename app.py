@@ -12,7 +12,7 @@ from utils import mean_or_zero
 app = Flask(__name__)
 
 
-VERSION = 1.06
+VERSION = 1.07
 INTEREST = 2.25
 
 
@@ -310,8 +310,6 @@ def etfs():
     for etf in etfs:
         for tag in etf.get('tags'):
             tags[tag].append(etf)
-
-    #1 / 0
     tags = {k: ETFTag(k, v) for k, v in tags.items()}
     
     stat = {}
@@ -320,9 +318,12 @@ def etfs():
     stat['absolute_momentum_month3_avg'] = mean_or_zero([etf['month3'] for etf in no_bond_etfs])
     stat['absolute_momentum_high'] = no_bond_etfs[0]
     stat['relative_momentum_etf'] = etfs_by_month3[0]
+    
     tags = sorted(tags.values(), key=lambda t: t.month3, reverse=True)
     
-    return render_template('etfs.html', VERSION=VERSION, INTEREST=INTEREST, etfs=etfs, order_by=order_by, ordering=ordering, stat=stat, tags=tags)
+    filters = db.all_filters()
+    
+    return render_template('etfs.html', VERSION=VERSION, INTEREST=INTEREST, filters=filters, etfs=etfs, order_by=order_by, ordering=ordering, stat=stat, tags=tags)
 
 
 if __name__ == '__main__':

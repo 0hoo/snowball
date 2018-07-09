@@ -170,12 +170,21 @@ def parse_snowball(code):
     print('네이버 {}'.format(url))
     tree = tree_from_url(url)
     
-    bps = parse_int(tree.xpath('//*[@id="pArea"]/div[1]/div/table/tr[3]/td/dl/dt[2]/b')[0].text)
+    element = tree.xpath('//*[@id="pArea"]/div[1]/div/table/tr[3]/td/dl/dt[2]/b')
+    if not element:
+        print('수집 실패')
+        return
+    bps = parse_int(element[0].text)
     print('BPS: {}'.format(bps))
 
-    dividend_rate = parse_float(tree.xpath('//*[@id="pArea"]/div[1]/div/table/tr[3]/td/dl/dt[6]/b')[0].text)
-    print('배당률: {}'.format(dividend_rate))
-
+    element = tree.xpath('//*[@id="pArea"]/div[1]/div/table/tr[3]/td/dl/dt[6]/b')
+    if element:
+        dividend_rate = parse_float(element[0].text)
+        print('배당률: {}'.format(dividend_rate))
+    else:
+        dividend_rate = 0
+        print('배당 수집 실패')
+    
     url = NAVER_YEARLY % (code)
     tree = tree_from_url(url)
 
