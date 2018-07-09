@@ -5,6 +5,7 @@ from datetime import datetime
 from statistics import mean
 import urllib.request
 import json
+import codecs
 
 import requests
 from lxml import html
@@ -314,7 +315,7 @@ def parse_etf(code, tag):
     })
 
 def parse_etfs():
-    f = open('dual_etf.txt', 'r')
+    f = codecs.open('dual_etf.txt', 'r', 'utf-8')
     lines = f.readlines()
     for line in lines:
         line = line.strip()
