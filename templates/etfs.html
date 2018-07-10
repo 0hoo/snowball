@@ -19,7 +19,7 @@
     <div class="content">
         듀얼모멘텀 ETF
         <div class="sub header">
-            {{ etfs|count }}종목 | 절대(3개월최고) 값이 정기예금이자(2.25%) 보다 0.5% 이상 높으면 매수 낮으면 매도(현금보유) | 매월 상대(최고)의 종목을 매수한다 (기존종목매도)
+            {{ etfs|count }}종목 | 절대(3개월최고) 값이 정기예금이자(2.25%) 보다 높으면 매수 낮으면 매도(현금보유) | 매월 상대(최고)의 종목을 매수한다 (기존종목매도)
             <br> 절대(3개월평균)은 평균적 절대 모멘텀을 의미하므로 참고용 | 상대(최고)에 국채 상품이 나오면 현금을 보유하거나 해당 종목 매수
         </div>
         <div class="ui mini statistic {% if stat.absolute_momentum_month3_avg <= INTEREST %}blue{% else %}red{% endif %}">

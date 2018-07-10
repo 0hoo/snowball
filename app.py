@@ -13,7 +13,7 @@ app = Flask(__name__)
 
 
 VERSION = 1.07
-INTEREST = 2.25 + 0.5
+INTEREST = 2.25
 
 
 @app.route('/stocks')
