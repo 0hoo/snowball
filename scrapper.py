@@ -39,6 +39,7 @@ def fill_company(filename='company.csv'):
                 code = code[7:]
             parse_snowball(code)
             time.sleep(random.random())
+    db.update_ranks()
 
 
 def parse_snowball_stocks(filter_bad=True, only_starred_owned=False):
