@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <!-- Standard Meta -->
     <meta charset="utf-8" />
@@ -18,7 +19,7 @@
         }
 
         .ui.container {
-            width: 1109px;
+            width: 1169px;
         }
 
         .main.container {
@@ -34,14 +35,14 @@
             padding: 1em 0em;
         }
 
-        .ui.form  .fields .delete-row {
+        .ui.form .fields .delete-row {
             margin: 22px 4px 0px 4px;
         }
 
         .hide_extra {
             white-space: nowrap;
             overflow: hidden;
-            text-overflow:ellipsis;
+            text-overflow: ellipsis;
         }
 
         .red {
@@ -57,33 +58,50 @@
         }
     </style>
 </head>
-<body>
-  <div class="ui fixed large inverted menu">
-    <div class="ui container">
-      <a href="{{ url_for('stocks') }}" class="header item">Snowball</a>
-      <a href="{{ url_for('stocks', status='owned') }}" class="item">보유</a>
-      <a href="{{ url_for('stocks', status='starred') }}" class="item">관심</a>
-      <a href="{{ url_for('stocks', status='starredorowned') }}" class="item">보유 | 관심</a>
-      <a href="{{ url_for('stocks', status='doubtful') }}" class="item">데이터 의심</a>
-      <a href="{{ url_for('stocks', status='bad') }}" class="header item">마이너스</a>
-    </div>
-  </div>
 
-  <div class="ui main container">
-      {% for message in messages %}
-          <div class="ui message {{ message.tags }}">
-              <i class="close icon"></i>
-              {% if message.extra_tags %}
-              <div class="header">{{ message.extra_tags }}</div>
-              {% endif %}
-              {{ message }}
-          </div>
-      {% endfor %}
-      <div id="content">
-      {% block content %}{% endblock %}
-      </div>
-  </div>
-  <script>
-  {% block javascript %}{% endblock %}
-  </script>
+<body>
+    <div class="ui fixed large inverted menu">
+        <div class="ui container">
+            <a href="{{ url_for('stocks') }}" class="header item">Snowball {{ VERSION }}</a>
+            <a href="{{ url_for('stocks', status='owned') }}" class="item">보유</a>
+            <a href="{{ url_for('stocks', status='starred') }}" class="item">관심</a>
+            <a href="{{ url_for('stocks', status='starredorowned') }}" class="item">보유 | 관심</a>
+            <a href="{{ url_for('stocks', status='doubtful') }}" class="item">데이터 의심</a>
+            <a href="{{ url_for('stocks', status='bad') }}" class="header item">마이너스</a>
+            <a href="{{ url_for('etfs') }}" class="header item">ETF</a>
+            <div class="ui dropdown item">
+                필터
+                <i class="dropdown icon"></i>
+                <div class="menu">
+                    <a href="{{ url_for('stocks_new_filter') }}" class="item">
+                        <b>새 필터 만들기</b>
+                    </a>
+                    {% for filter in filters %}
+                    <a href="{{ url_for('stocks') }}?filter_id={{ filter._id}}" class="item">
+                        {{ filter.name }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="ui main container">
+        {% for message in messages %}
+        <div class="ui message {{ message.tags }}">
+            <i class="close icon"></i>
+            {% if message.extra_tags %}
+            <div class="header">{{ message.extra_tags }}</div>
+            {% endif %} {{ message }}
+        </div>
+        {% endfor %}
+        <div id="content">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+    <script>
+        $('.ui.dropdown').dropdown();
+        {% block javascript %}
+        {% endblock %}
+    </script>
 </body>

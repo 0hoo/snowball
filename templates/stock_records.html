@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}
+{{ stock.title }} - Snowball
+{% endblock %}
+
+{% block content %}
+<style type="text/css">
+    .graph {
+        padding: 10px;
+        position: relative;
+        overflow-x: scroll;
+        width: 100%;
+    }
+    .graph-container {
+        height: 500px;
+        width: 100%;
+        min-width: 100%
+    }
+</style>
+<script>
+window.chartColors = {
+    red: 'rgb(255, 99, 132)',
+    orange: 'rgb(255, 159, 64)',
+    yellow: 'rgb(255, 205, 86)',
+    green: 'rgb(75, 192, 192)',
+    blue: 'rgb(54, 162, 235)',
+    purple: 'rgb(153, 102, 255)',
+    grey: 'rgb(201, 203, 207)'
+};
+
+function recordChart(id, labels, data1, data2) {
+    var ctx = document.getElementById(id).getContext('2d');
+    var chart = new Chart(ctx, {
+        type:'line',
+        data: {
+            labels: labels,
+            datasets: [
+            {
+                label: '기대수익률',
+                borderColor: window.chartColors.red,
+                backgroundColor: window.chartColors.red,
+                fill: false,
+                data: data1,
+                yAxisID: 'y-axis-1'
+            },
+            {
+                label: '가격',
+                borderColor: window.chartColors.green,
+                backgroundColor: window.chartColors.green,
+                fill: false,
+                data: data2,
+                yAxisID: 'y-axis-2'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                yAxes: [{
+                    id: 'y-axis-1',
+                    display: true,
+                    position: 'right',
+                    ticks: {
+                        suggestedMax: 25,
+                        suggestedMin: 0
+                    }
+                }, {
+                    id: 'y-axis-2',
+                    display: true,
+                    position: 'right',
+                    ticks: {
+                        beginAtZero:false
+                    }
+                }]
+            }
+        }
+    });
+    document.getElementById(id).parentElement.setAttribute('style', `width: ${labels.length*10}px;min-width: 100%`);
+}
+</script>
+
+<h3 class="ui header">
+    <div class="content">
+        {{ stock.title }}
+        {% if stock.starred %}
+          <i class="icon star yellow"></i>
+        {% endif %}
+        {% if stock.owned %}
+          <i class="icon heart red"></i>
+        {% endif %}
+        <div class="sub header">{{ stock.code }}
+            | <a href="{{ url_for('stock', code=stock.code) }}">종목정보</a>
+        </div>
+    </div>
+  </h3>
+
+  <div class="ui grid">
+    {% for records in records_by_year %}
+    <div class="row">
+        <h3 class="ui header">{{ records[0].year }}년 기대수익률|가격</h3>
+        <div class="graph">
+            <div class="graph-container">
+                <canvas id="recordChart{{ loop.index }}" width="2000" height="500"></canvas>
+            </div>
+        </div>
+        <script>
+            var labels = [{% for record in records[1] %}"{{ record.date.strftime('%Y-%m-%d') }}",{% endfor %}];
+            var expected_rate_data = [{% for record in records[1] %}{{ record.expected_rate }},{% endfor %}];
+            var price_data = [{% for record in records[1] %}{{ record.price }},{% endfor %}];
+            recordChart("recordChart{{ loop.index }}", labels, expected_rate_data, price_data);
+        </script>    
+        <div class="ui stackable celled grid">
+            <div class="three column row">
+                <div class="column">
+                    <table class="ui definition table">
+                    <tbody>
+                    </tbody>
+                        <tr>
+                            <td>{{ records[0].year }} BPS</td>
+                            <td>{{ records[0].bps }}</td>
+                        </tr>
+                        <tr>
+                            <td>{{ records[0].year }} fROE</td>
+                            <td>{{ '%.2f'|format(records[0].fROE) }}</td>
+                        </tr>    
+                        <tr>
+                            <td>{{ records[0].year }} 최고가</td>
+                            <td>{{ records[0].high_price }}</td>
+                        </tr>
+                        <tr>
+                            <td>{{ records[0].year }} 최저가</td>
+                            <td>{{ records[0].low_price }}</td>
+                        </tr>
+                        <tr>
+                            <td>{{ records[0].year }} 최고기대수익률</td>
+                            <td>{{ '%.2f'|format(records[0].high_expected_rate) }}</td>
+                        </tr>
+                        <tr>
+                            <td>{{ records[0].year }} 최저기대수익률</td>
+                            <td>{{ '%.2f'|format(records[0].low_expected_rate) }}</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="column">
+                    <table class="ui table">
+                        <thead>
+                            <tr>
+                                <th>연도</th>
+                                <th>ROE</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for roe in stock.four_years_roe(records[0].year) %}
+                            <tr>
+                                <td {% if loop.index0 == stock.last_year_index %}class="positive"{% endif %}>
+                                    {{roe.0}}
+                                </td>
+                                <td {% if (roe.1 or 0) < 5 %}class="warning"{% endif %}>
+                                    {{roe.1}}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="column">
+                    <table class="ui table">
+                        <thead>
+                            <tr>
+                                <th>날짜</th>
+                                <th>매수/매도</th>
+                                <th>기대수익률</th>
+                                <th>가격</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for event in records[2] %}
+                            <tr>
+                                <td>{{ event.date.strftime('%Y-%m-%d') }}</td>
+                                <td>{% if event.buy %}매수{% else %}매도{% endif %}</td>
+                                <td>{{ '%.2f'|format(event.record.expected_rate) }}</td>
+                                <td>{{ event.record.price|round|int }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+
+{% endblock %}

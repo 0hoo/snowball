@@ -6,6 +6,7 @@
 .DS_Store
 .idea/
 .vscode/
+.mypy_cache/
 build/
 dist/
 schema-custom.json

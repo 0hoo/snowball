@@ -3,18 +3,27 @@ import time
 import random
 from datetime import datetime
 from statistics import mean
+import urllib.request
+import json
+import codecs
 
 import requests
 from lxml import html
 
 import db
 from db import Quarter
+from utils import parse_float, parse_int
+
 
 DAUM_BASIC = 'http://finance.daum.net/item/main.daum?code='
 NAVER_COMPANY = 'http://companyinfo.stock.naver.com/v1/company/c1010001.aspx?cmp_cd='
 NAVER_YEARLY = "http://companyinfo.stock.naver.com/v1/company/ajax/cF1001.aspx?cmp_cd=%s&fin_typ=0&freq_typ=Y"
 NAVER_QUARTERLY = "http://companyinfo.stock.naver.com/v1/company/ajax/cF1001.aspx?cmp_cd=%s&fin_typ=0&freq_typ=Q"
-NAVER_YEARLY_JSON = "http://companyinfo.stock.naver.com/v1/company/cF3002.aspx?cmp_cd=%s&frq=0&rpt=0&finGubun=MAIN&frqTyp=0&cn="
+#NAVER_YEARLY_JSON = "http://companyinfo.stock.naver.com/v1/company/cF3002.aspx?cmp_cd=%s&frq=0&rpt=0&finGubun=MAIN&frqTyp=0&cn="
+NAVER_JSON1 = 'http://companyinfo.stock.naver.com/v1/company/cF4002.aspx?cmp_cd=%s&frq=0&rpt=1&finGubun=MAIN&frqTyp=0&cn='
+NAVER = 'https://finance.naver.com/item/main.nhn?code='
+
+
 LAST_YEAR = str(datetime.now().year - 1)
 
 
@@ -30,6 +39,7 @@ def fill_company(filename='company.csv'):
                 code = code[7:]
             parse_snowball(code)
             time.sleep(random.random())
+    db.update_ranks()
 
 
 def parse_snowball_stocks(filter_bad=True, only_starred_owned=False):
@@ -41,24 +51,14 @@ def parse_snowball_stocks(filter_bad=True, only_starred_owned=False):
         if stock.get('code', None):
             parse_snowball(stock['code'])
             time.sleep(random.random())
+    db.update_ranks()
 
 
-def tree_from_url(url):
-    return html.fromstring(requests.get(url).content)
-
-
-def parse_float(str):
-    try:
-        return float(str.replace(',', '').replace('%', ''))
-    except (ValueError, AttributeError):
-        return 0
-
-
-def parse_int(str):
-    try:
-        return int(str.replace(',', ''))
-    except (ValueError, AttributeError):
-        return 0
+def tree_from_url(url, decode=None):
+    content = requests.get(url).content
+    if decode:
+        content = content.decode(decode)
+    return html.fromstring(content)
 
 
 def parse_basic(code):
@@ -89,6 +89,11 @@ def parse_basic(code):
     trade_volume = parse_float(tree.xpath('//*[@id="topWrap"]/div[1]/ul[2]/li[5]/span[1]')[0].text)
     trade_value = parse_float(tree.xpath('//*[@id="topWrap"]/div[1]/ul[2]/li[6]/span')[0].text)
 
+    #agg_rank = tree.xpath('//*[@id="stockContent"]/ul[2]/li[2]/dl[2]/dd/span[2]')[0].text
+    #agg_rank = int(agg_rank[1:])
+
+    agg_value = parse_float(tree.xpath('//*[@id="stockContent"]/ul[2]/li[2]/dl[2]/dd')[0].text)
+
     print('종목명: {title} 현재가: {price}'.format(title=title, price=price))
 
     stock = {
@@ -101,7 +106,8 @@ def parse_basic(code):
         'pbr': pbr,
         'trade_volume': trade_volume,
         'trade_value': trade_value,
-        'exchange': exchange
+        'exchange': exchange,
+        'agg_value': agg_value,
     }
     db.save_stock(stock)
     return True
@@ -114,6 +120,7 @@ def first_or_none(iter):
 def float_or_none(x):
     return None if not x else float(x.replace(',', ''))
 
+
 def quarter_from(text):
     if (not text) or ('/' not in text):
         return None
@@ -121,6 +128,7 @@ def quarter_from(text):
     text = text[:-3] if estimated else text
     comp = text.split('/')
     return Quarter(year=int(comp[0]), number=int(int(comp[1]) / 3), estimated=estimated)
+
 
 def parse_quarterly(code):
     print('분기 {}'.format(code))
@@ -164,12 +172,21 @@ def parse_snowball(code):
     print('네이버 {}'.format(url))
     tree = tree_from_url(url)
     
-    bps = parse_int(tree.xpath('//*[@id="pArea"]/div[1]/div/table/tr[3]/td/dl/dt[2]/b')[0].text)
+    element = tree.xpath('//*[@id="pArea"]/div[1]/div/table/tr[3]/td/dl/dt[2]/b')
+    if not element:
+        print('수집 실패')
+        return
+    bps = parse_int(element[0].text)
     print('BPS: {}'.format(bps))
 
-    dividend_rate = parse_float(tree.xpath('//*[@id="pArea"]/div[1]/div/table/tr[3]/td/dl/dt[6]/b')[0].text)
-    print('배당률: {}'.format(dividend_rate))
-
+    element = tree.xpath('//*[@id="pArea"]/div[1]/div/table/tr[3]/td/dl/dt[6]/b')
+    if element:
+        dividend_rate = parse_float(element[0].text)
+        print('배당률: {}'.format(dividend_rate))
+    else:
+        dividend_rate = 0
+        print('배당 수집 실패')
+    
     url = NAVER_YEARLY % (code)
     tree = tree_from_url(url)
 
@@ -180,6 +197,7 @@ def parse_snowball(code):
         return
 
     tds = tree.xpath('/html/body/table/tbody/tr[22]/td')
+    
     ROEs = [first_or_none(td.xpath('span/text()')) for td in tds]
     while ROEs and ROEs[-1] is None:
         ROEs.pop()
@@ -245,3 +263,65 @@ def parse_snowball(code):
     stock.save_record()
 
     parse_quarterly(code)
+    parse_json(code)
+
+
+def parse_json(code):
+    print('종목 {} JSON...'.format(code))
+    url = NAVER_JSON1 % (code)
+    urlopen = urllib.request.urlopen(url)
+    data = json.loads(urlopen.read().decode())
+    GPs = []
+    if data and 'DATA' in data and data['DATA']:
+        yyyy = [int(y[:4]) for y in data['YYMM'] if len(y) > 4 and len(y.split('/')) > 2]
+        year_data_keys = {y: i+1 for i, y in enumerate(yyyy)}
+    
+        for row in data['DATA']:
+            if 'ACC_NM' in row and row['ACC_NM'].startswith('매출총이익＜당기'):
+                GPs = [(y, row['DATA' + str(year_data_keys[y])]) for y in sorted(list(year_data_keys.keys()))]
+                break
+    stock = {
+        'code': code,
+        'GPs': GPs
+    }
+    print('GPs: {}'.format(GPs))
+    stock = db.save_stock(stock)
+
+
+def parse_etf(code, tag):
+    url = NAVER + code
+    tree = tree_from_url(url, 'euc-kr')
+
+    title = tree.xpath('//*[@id="middle"]/div[1]/div[1]/h2/a')[0].text
+    month1 = parse_float(tree.xpath('//*[@id="tab_con1"]/div[5]/table/tbody/tr[1]/td/em')[0].text.strip())
+    month3 = parse_float(tree.xpath('//*[@id="tab_con1"]/div[5]/table/tbody/tr[2]/td/em')[0].text.strip())
+    month6 = parse_float(tree.xpath('//*[@id="tab_con1"]/div[5]/table/tbody/tr[3]/td/em')[0].text.strip())
+    month12 = parse_float(tree.xpath('//*[@id="tab_con1"]/div[5]/table/tbody/tr[4]/td/em')[0].text.strip())
+    company = tree.xpath('//table[contains(@class, "tbl_type1")]//td/span/text()')[2]
+
+    cost = parse_float(tree.xpath('//table[contains(@class, "tbl_type1")]//td/em/text()')[0])
+
+    tags = tag.split(',')
+
+    db.save_etf({
+        'code': code,
+        'title': title,
+        'company': company,
+        'month1': month1,
+        'month3': month3,
+        'month6': month6,
+        'month12': month12,
+        'cost': cost,
+        'tags': tags
+    })
+
+def parse_etfs():
+    f = codecs.open('dual_etf.txt', 'r', 'utf-8')
+    lines = f.readlines()
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        words = line.split(' ')
+        parse_etf(words[-1], words[0])
+    f.close()

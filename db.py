@@ -1,16 +1,23 @@
-from typing import Tuple, List
+from typing import Tuple, List, Optional, Dict
+from types import FunctionType
 
 from datetime import datetime
 from functools import partial
+from itertools import repeat
 from statistics import mean
 from collections import UserDict, namedtuple
 
 from pymongo import MongoClient, ASCENDING, DESCENDING
+from bson.objectid import ObjectId
+
+from utils import attr_or_key_getter
 
 
 FScore = namedtuple('FScore', ['total_issued_stock', 'profitable', 'cfo'])
 YearStat = namedtuple('YearStat', ['year', 'value', 'calculated'])
 Quarter = namedtuple('Quarter', ['year', 'number', 'estimated'])
+FilterOption = namedtuple('Filter', ['key', 'title', 'morethan', 'value', 'is_boolean'])
+RankOption = namedtuple('Rank', ['key', 'title', 'asc', 'is_rankoption'])
 
 
 YEAR_STAT = Tuple[int, int]
@@ -28,6 +35,70 @@ THIS_YEAR = datetime.now().year
 LAST_YEAR = THIS_YEAR - 1
 
 
+available_rank_options = [
+    RankOption(key='rank_pbr', title='PBR', asc=True, is_rankoption=True),
+    RankOption(key='rank_per', title='PER', asc=True, is_rankoption=True),
+    RankOption(key='rank_last_year_gpa', title='GPA', asc=False, is_rankoption=True),
+    RankOption(key='rank_dividend', title='배당', asc=False, is_rankoption=True),
+]
+
+
+available_filter_options = [
+    FilterOption(key='expected_rate', title='기대수익률', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='latest_fscore', title='FScore', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='future_roe', title='fROE', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='expected_rate_by_current_pbr', title='현P기대수익률', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='expected_rate_by_low_pbr', title='저P기대수익률', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='pbr', title='PBR', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='per', title='PER', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='dividend_rate', title='배당률', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='countable_last_four_years_roes_count', title='계산가능ROE수', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='roe_max_diff', title='ROE최대최소차', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='last_four_years_roe_max_diff', title='최근4년ROE최대최소차', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='calculable_pbr_count', title='계산가능PBR수', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='rank_last_year_gpa', title='GPA순위', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='agg_rank', title='시총순위', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='is_five_years_record_low', title='5년최저PBR(참)', morethan=None, value=None, is_boolean=True),
+    FilterOption(key='has_consensus', title='컨센서스있음(참)', morethan=None, value=None, is_boolean=True),
+    FilterOption(key='is_positive_consensus_roe', title='컨센서스>fROE(참)', morethan=None, value=None, is_boolean=True),
+    FilterOption(key='is_starred', title='관심종목(참)', morethan=None, value=None, is_boolean=True),
+    FilterOption(key='is_owned', title='보유종목(참)', morethan=None, value=None, is_boolean=True),
+]
+
+
+class Filter(UserDict):
+    @property
+    def filter_options(self) -> List[FilterOption]:
+        return [FilterOption(
+            key=o['key'], 
+            title=o['title'], 
+            morethan=o['morethan'], 
+            value=o['value'], 
+            is_boolean=o.get('is_boolean', False)) for o in self['options'] if not o.get('is_rankoption', False)]
+
+    @property
+    def dict_filter_options(self) -> List[dict]:
+        return [o for o in self['options'] if not o.get('is_rankoption', False)]
+
+    @property
+    def rank_options(self) -> List[RankOption]:
+        return [RankOption(
+            key=o['key'], 
+            title=o['title'], 
+            asc=o['asc'], 
+            is_rankoption=True) for o in self['options'] if o.get('is_rankoption', False)] 
+
+
+class ETF(UserDict):
+    @property
+    def object_id(self) -> str:
+        return self['_id']
+
+    @property
+    def tags(self) -> str:
+        return ', '.join(self.get('tags'))
+
+
 class Stock(UserDict):
     def __hash__(self):
         return hash(frozenset(self.items()))
@@ -37,8 +108,16 @@ class Stock(UserDict):
         return self['_id']
 
     @property
-    def current_price(self):
-        return self.get('current_price', 0)
+    def is_starred(self) -> bool:
+        return self.get('starred', False)
+
+    @property
+    def is_owned(self) -> bool:
+        return self.get('owned', False)
+
+    @property
+    def current_price(self) -> int:
+        return int(self.get('current_price', 0))
 
     @property
     def price_arrow(self) -> str:
@@ -59,28 +138,40 @@ class Stock(UserDict):
         return '+' if self.get('price_diff') > 0 else ''
 
     @property
+    def pbr(self) -> float:
+        return self.get('pbr', 0)
+
+    @property
+    def per(self) -> float:
+        return self.get('per', 0)
+
+    @property
     def financial_statements_url(self) -> str:
         return "http://companyinfo.stock.naver.com/v1/company/ajax/cF1001.aspx?cmp_cd=%s&fin_typ=0&freq_typ=Y" % (self['code'])
 
     @property
-    def roes(self) -> List[Tuple[int, int or None]]:
+    def roes(self) -> List[Tuple[int, Optional[float]]]:
         return self.year_stat('ROEs')
 
     @property
-    def pbrs(self) -> List[Tuple[int, int or None]]:
+    def pbrs(self) -> List[Tuple[int, Optional[float]]]:
         return self.year_stat('PBRs')
 
     @property
-    def pers(self) -> List[Tuple[int, int or None]]:
+    def pers(self) -> List[Tuple[int, Optional[float]]]:
         return self.year_stat('PERs')
     
     @property
-    def epss(self) -> List[Tuple[int, int or None]]:
+    def epss(self) -> List[Tuple[int, Optional[float]]]:
         return self.year_stat('EPSs')
 
     @property
-    def countable_roes(self):
+    def countable_roes(self) -> List[Tuple[int, Optional[float]]]:
         return [roe for roe in self.get('ROEs', []) if roe]
+
+    @property
+    def countable_last_four_years_roes_count(self) -> int:
+        return len(self.last_four_years_roe)
 
     @property
     def low_pbr(self) -> float:
@@ -121,13 +212,21 @@ class Stock(UserDict):
             return 0
 
     @property
+    def dividend_rate(self) -> float:
+        return self.get('dividend_rate', 0)
+
+    @property
     def has_note(self) -> bool:
         return len(self.get('note', '')) > 0
 
     @property
     def latest_fscore(self) -> int:
-        fscore = self.fscores[-1][1]
-        return sum([fscore.total_issued_stock + fscore.profitable + fscore.cfo])
+        last_year_fscore = [f for f in self.fscores if f[0] == LAST_YEAR]
+        if not last_year_fscore:
+            return -1
+        else:
+            fscore = last_year_fscore[0][1]
+            return sum([fscore.total_issued_stock + fscore.profitable + fscore.cfo])
 
     @property
     def fscores(self) -> List[Tuple[int, FScore]]:
@@ -145,14 +244,17 @@ class Stock(UserDict):
 
     @property
     def last_four_years_roe(self) -> List[int]:
-        return [roe[1] for roe in self.year_stat('ROEs') if roe[1] and roe[0] >= (LAST_YEAR - 3) and roe[0] <= LAST_YEAR]
+        return [roe[1] for roe in self.four_years_roe(THIS_YEAR)]
+
+    def four_years_roe(self, year) -> List[Tuple[int, float]]:
+        return [roe for roe in self.year_stat('ROEs') if roe[1] and roe[0] >= (year - 4) and roe[0] < year]
 
     @property
-    def calculated_roe_count(self):
+    def calculated_roe_count(self) -> int:
         return len(self.last_four_years_roe)
 
     @property
-    def calculable_pbr_count(self):
+    def calculable_pbr_count(self) -> int:
         return len([pbr for pbr in self.year_stat('PBRs', exclude_future=True) if pbr[1] > 0])
 
     @property
@@ -210,11 +312,18 @@ class Stock(UserDict):
         return max(ROEs) - min(ROEs) if len(ROEs) > 2 else 0
 
     @property
-    def QROEs(self):
+    def last_four_years_roe_max_diff(self) -> float:
+        try:
+            return max(self.last_four_years_roe) - min(self.last_four_years_roe)
+        except:
+            return 0
+
+    @property
+    def QROEs(self) -> List[Tuple[Quarter, float]]:
         return [(Quarter(*qroe[0]), qroe[1]) for qroe in self.get('QROEs', [])]
 
     @property
-    def QBPSs(self):
+    def QBPSs(self) -> List[Tuple[Quarter, int]]:
         return [(Quarter(*qbps[0]), qbps[1]) for qbps in self.get('QBPSs', [])]
 
     @property
@@ -233,10 +342,74 @@ class Stock(UserDict):
     def other_year_stat(self):
         return zip(self.year_stat('BPSs'), self.year_stat('DEPTs'), self.year_stat('CAPEXs'))
 
-    def expected_rate_by_price(self, price) -> float:
+    @property
+    def is_five_years_record_low(self):
+        return self.low_pbr > self.pbr
+
+    @property
+    def has_consensus(self) -> bool:
+        return len(self.consensus_roes) > 0
+
+    @property
+    def consensus_roes(self):
+        return [pair for pair in self.roes if pair[0] > LAST_YEAR]
+
+    @property
+    def mean_consensus_roe(self):
+        return mean([pair[1] for pair in self.consensus_roes if pair[1]])
+
+    @property
+    def is_positive_consensus_roe(self):
+        if not self.has_consensus:
+            return False
+        return self.mean_consensus_roe >= self.future_roe
+
+    @property
+    def TAs(self):
+        return self.year_stat('TAs', exclude_future=False)
+
+    @property
+    def rank_last_year_gpa(self):
+        return self.get('rank_last_year_gpa')
+
+    @property
+    def rank_pbr(self):
+        return self.get('rank_pbr')
+
+    def calc_gpa(self, gp):
+        if not gp[1]:
+            return None
+        TA = [TA for TA in self.TAs if TA[0] == gp[0]]
+        if not TA:
+            return None
+        TA = TA[0]
+        if not TA[1]:
+            return None
+        return gp[1] / TA[1]
+
+    @property
+    def GPAs(self):
+        return [(gp[0], self.calc_gpa(gp)) for gp in self.get('GPs', [])]
+
+    @property
+    def GPA_stat(self):
+        return zip(self.TAs, [v for v in self.get('GPs', []) if v[1]], [v for v in self.GPAs if v[1]])
+
+    @property
+    def last_year_gpa(self):
+        v = [gpa[1] for gpa in self.GPAs if gpa[0] == LAST_YEAR]
+        if not v or not v[0]:
+            return 0
+        return v[0]
+
+    @property
+    def agg_rank(self):
+        return self.get('agg_rank')
+        
+    def expected_rate_by_price(self, price: int) -> float:
         return self.calc_expected_rate(self.calc_future_bps, FUTURE, price=price)
 
-    def calc_future_bps(self, future) -> int:
+    def calc_future_bps(self, future: int) -> int:
         if not self.calculable:
             return 0
         bps = self.get('bps', 0)
@@ -244,22 +417,22 @@ class Stock(UserDict):
         future_roe = adjusted_future_roe or self.future_roe
         return int(bps * ((1 + (1 * future_roe / 100)) ** future))
 
-    def calc_future_price_low_pbr(self, future) -> int:
+    def calc_future_price_low_pbr(self, future: int) -> int:
         return int(self.calc_future_bps(future) * self.low_pbr)
 
-    def calc_future_price_high_pbr(self, future) -> int:
+    def calc_future_price_high_pbr(self, future: int) -> int:
         return int(self.calc_future_bps(future) * self.high_pbr)
 
-    def calc_future_price_current_pbr(self, future) -> int:
+    def calc_future_price_current_pbr(self, future: int) -> int:
         return int(self.calc_future_bps(future) * self['pbr'])
 
-    def calc_future_price_low_current_mid_pbr(self, future) -> int:
+    def calc_future_price_low_current_mid_pbr(self, future: int) -> int:
         return int(self.calc_future_bps(future) * self.mid_pbr)
 
-    def calc_future_price_adjusted_future_pbr(self, future) -> int:
+    def calc_future_price_adjusted_future_pbr(self, future: int) -> int:
         return int(self.calc_future_bps(future) * self.get('adjusted_future_pbr', 0))
 
-    def calc_expected_rate(self, calc_bps, future, price=None):
+    def calc_expected_rate(self, calc_bps, future: int, price: int=None):
         if not price:
             price = self.current_price
         return ((calc_bps(future) / price) ** (1.0 / future) - 1) * 100
@@ -293,17 +466,21 @@ class Stock(UserDict):
         
         return FScore(total_issued_stock=total_issued_stock, profitable=profitable, cfo=cfo)
 
-    def year_stat(self, stat, exclude_future=False) -> List[Tuple[int, int]]:
+    def year_stat(self, stat, exclude_future=False) -> List[Tuple[int, Optional[float]]]:
         stats = self.get(stat)
         if not stats:
             return [(0, 0)]
         
         last_year_index = self.get('last_year_index')
         assert(last_year_index is not None)
-        
-        year = lambda idx: LAST_YEAR - (last_year_index - idx)
-        return [(year(idx), value) for idx, value in enumerate(stats) 
-            if not exclude_future or year(idx) <= LAST_YEAR]
+        if len(stats) < last_year_index:
+            year = lambda idx: LAST_YEAR - len(stats) + idx + 1
+            return [(year(idx), value) for idx, value in enumerate(stats) 
+                if not exclude_future or year(idx) <= LAST_YEAR]
+        else:
+            year = lambda idx: LAST_YEAR - (last_year_index - idx)
+            return [(year(idx), value) for idx, value in enumerate(stats) 
+                if not exclude_future or year(idx) <= LAST_YEAR]
 
     def save_record(self):
         starred = self.get('starred', False)
@@ -333,24 +510,65 @@ class Stock(UserDict):
             'code': self.get('code'),
             'records': records,
         })
+
     def __str__(self) -> str:
         return '{} : {}'.format(self['title'], self['code'])
 
 
-def attr_or_key_getter(name, obj):
-    try:
-        return getattr(obj, name)
-    except AttributeError:
-        return obj.get(name, 0)
+def make_filter_option_func(filter_option):
+    def filter_option_func(s):
+        v = getattr(Stock(s), filter_option.key)
+        if filter_option.is_boolean:
+            return v
+        return v >= filter_option.value if filter_option.morethan else v <= filter_option.value
+    return filter_option_func
 
 
-def all_stocks(order_by='title', ordering='asc', find=None, filter_by_expected_rate=True, filter_bad=True) -> List[Stock]:
-    dicts = db.stocks.find(find) if find else db.stocks.find()
+def update_ranks():
+    dicts = db.stocks.find()
+    dicts = sorted([Stock(s) for s in dicts], key=partial(attr_or_key_getter, 'last_year_gpa'), reverse=True)
+    for idx, stock in enumerate(dicts):
+        stock['rank_last_year_gpa'] = idx + 1
+        save_stock(stock)
+    dicts = sorted([Stock(s) for s in dicts], key=partial(attr_or_key_getter, 'agg_value'), reverse=True)
+    for idx, stock in enumerate(dicts):
+        stock['agg_rank'] = idx + 1
+        save_stock(stock)
+    dicts = sorted([Stock(s) for s in dicts], key=partial(attr_or_key_getter, 'pbr'), reverse=False)
+    for idx, stock in enumerate(dicts):
+        stock['rank_pbr'] = idx + 1
+        save_stock(stock)
+    dicts = sorted([Stock(s) for s in dicts], key=partial(attr_or_key_getter, 'per'), reverse=False)
+    for idx, stock in enumerate(dicts):
+        stock['rank_per'] = idx + 1
+        save_stock(stock)
+    dicts = sorted([Stock(s) for s in dicts], key=partial(attr_or_key_getter, 'dividend_rate'), reverse=True)
+    for idx, stock in enumerate(dicts):
+        stock['rank_dividend'] = idx + 1
+        save_stock(stock)
+
+
+def all_stocks(order_by='title', ordering='asc', find=None, filter_by_expected_rate=True, filter_bad=True, filter_options=[], rank_options=[]) -> List[Stock]:
+    stocks = [Stock(dict) for dict in (db.stocks.find(find) if find else db.stocks.find())]
+
+    filter_funcs = []
+
     if filter_by_expected_rate:
-        filter_func = lambda s: (Stock(s).expected_rate > 0 and filter_bad) or (Stock(s).expected_rate < 0 and not filter_bad)
-    else:
-        filter_func = lambda s: True
-    return sorted([Stock(s) for s in dicts if filter_func(s)], key=partial(attr_or_key_getter, order_by), reverse=(ordering != 'asc'))
+        filter_by_expected_rate_func = lambda s: (s.expected_rate > 0 and filter_bad) or (s.expected_rate < 0 and not filter_bad)
+        filter_funcs.append(filter_by_expected_rate_func)
+    
+    for filter_option in filter_options:
+        filter_funcs.append(make_filter_option_func(filter_option))
+
+    stocks = sorted([s for s in stocks if all(list(map(FunctionType.__call__, filter_funcs, repeat(s))))],
+        key=partial(attr_or_key_getter, order_by), reverse=(ordering != 'asc'))
+
+    if rank_options:
+        for stock in stocks:
+            stock['total_rank'] = sum([stock.get(r.key) for r in rank_options])
+        return sorted(stocks, key=partial(attr_or_key_getter, 'total_rank'), reverse=False)
+
+    return stocks
 
 
 def stock_by_code(code) -> Stock:
@@ -370,3 +588,60 @@ def save_stock(stock) -> Stock:
 def unset_keys(keys_to_unsets):
     for key in keys_to_unsets:
         db.stocks.update({}, {'$unset':{key: 1}}, multi=True)
+
+
+def all_filters():
+    dicts = db.filters.find()
+    return [Filter(f) for f in dicts]
+
+
+def filter_by_id(filter_id) -> Filter:
+    return Filter(db.filters.find_one({'_id': ObjectId(filter_id)}))
+
+
+def save_filter(filter):
+    filter_id = filter.get('_id', None)
+    if filter_id:
+        return db.filters.update_one({'_id': ObjectId(filter_id)}, {'$set': filter}).upserted_id
+    else:
+        return db.filters.insert_one(filter).inserted_id
+
+
+def remove_filter(filter_id):
+    db.filters.delete_one({'_id': ObjectId(filter_id)})
+
+
+def remove_stock(code):
+    db.stocks.remove({'code': code})
+
+
+def save_prices(prices):
+    db.prices.insert_many(prices)
+
+
+def get_latest_price(code):
+    return db.prices.find_one({'code': code}, sort=[('date', DESCENDING)])
+
+
+def get_prices(code):
+    return list(db.prices.find({'code': code}, sort=[('date', ASCENDING)]))
+
+
+def save_etf(etf) -> ETF:
+    exist = db.etf.find_one({'code': etf['code']})
+    if exist:
+        print("update:" ,etf)
+        db.etf.update_one({'code': exist['code']}, {'$set': etf})
+    else:
+        db.etf.insert_one(etf)
+    return etf_by_code(etf['code'])
+
+
+def etf_by_code(code) -> ETF:
+    return ETF(db.etf.find_one({'code': code}))
+
+
+def all_etf(order_by='title', ordering='asc'):
+    ETFs = [ETF(dict) for dict in db.etf.find()]
+    ETFs = sorted(ETFs, key=partial(attr_or_key_getter, order_by), reverse=(ordering != 'asc'))
+    return ETFs
