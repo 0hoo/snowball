@@ -435,7 +435,10 @@ class Stock(UserDict):
     def calc_expected_rate(self, calc_bps, future: int, price: int=None):
         if not price:
             price = self.current_price
-        return ((calc_bps(future) / price) ** (1.0 / future) - 1) * 100
+        future_bps = calc_bps(future)
+        if future_bps < 0:
+            return 0
+        return ((future_bps / price) ** (1.0 / future) - 1) * 100
 
     def ten_year_prices(self) -> List[Tuple[int, float]]:
         price = self.get('my_price', 0)
