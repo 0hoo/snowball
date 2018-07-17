@@ -19,57 +19,59 @@
     <div class="content">
         듀얼모멘텀 ETF
         <div class="sub header">
-            {{ etfs|count }}종목 | 절대(3개월최고) 값이 정기예금이자(2.25%) 보다 높으면 매수 낮으면 매도(현금보유) | 매월 상대(최고)의 종목을 매수한다 (기존종목매도)
-            <br> 절대(3개월평균)은 평균적 절대 모멘텀을 의미하므로 참고용 | 상대(최고)에 국채 상품이 나오면 현금을 보유하거나 해당 종목 매수
+            {{ etfs|count }}종목 | 절대({{momentum_base_kr}}최고) 값이 정기예금이자(2.25%) 보다 높으면 매수 낮으면 매도(현금보유) | 매월 상대(최고)의 종목을 매수한다 (기존종목매도)
+            <br> 절대({{momentum_base_kr}}평균)은 평균적 절대 모멘텀을 의미하므로 참고용 | 상대(최고)에 국채 상품이 나오면 현금을 보유하거나 해당 종목 매수
         </div>
-        <div class="ui mini statistic {% if stat.absolute_momentum_month3_avg <= INTEREST %}blue{% else %}red{% endif %}">
+        <div class="ui mini statistic {% if stat.absolute_momentum_momentum_base_avg <= INTEREST %}blue{% else %}red{% endif %}">
             <div class="value">
-                {{ '%.2f'|format(stat.absolute_momentum_month3_avg) }}
+                {{ '%.2f'|format(stat.absolute_momentum_momentum_base_avg) }}
             </div>
             <div class="label">
-                절대 (3개월평균)
+                절대 ({{momentum_base_kr}}평균)
             </div>
         </div>
-        <div class="ui mini statistic {% if stat.absolute_momentum_high.month3 <= INTEREST %}blue{% else %}red{% endif %}">
+        <div class="ui mini statistic {% if stat.absolute_momentum_high[momentum_base] <= INTEREST %}blue{% else %}red{% endif %}">
             <div class="value">
-                {{ stat.absolute_momentum_high.title }} {{ '%.2f'|format(stat.absolute_momentum_high.month3) }}
+                {{ stat.absolute_momentum_high.title }} {{ '%.2f'|format(stat.absolute_momentum_high[momentum_base]) }}
             </div>
             <div class="label">
-                절대 (3개월최고)
+                절대 ({{momentum_base_kr}}최고)
             </div>
         </div>
-        <div class="ui mini statistic {% if stat.relative_momentum_etf.month3 <= 0 %}blue{% else %}red{% endif %}">
+        <div class="ui mini statistic {% if stat.relative_momentum_etf[momentum_base] <= 0 %}blue{% else %}red{% endif %}">
             <div class="value">
-                {{ stat.relative_momentum_etf.title }} {{ '%.2f'|format(stat.relative_momentum_etf.month3) }}
+                {{ stat.relative_momentum_etf.title }} {{ '%.2f'|format(stat.relative_momentum_etf[momentum_base]) }}
             </div>
             <div class="label">
                 상대 (최고)
             </div>
         </div>
-        <div class="ui mini statistic">
-            <div class="value">
-                {{ tags[0].tag }} {{ '%.2f'|format(tags[0].month3) }}
+        {% if etf_type == 'domestic' %}
+            <div class="ui mini statistic">
+                <div class="value">
+                    {{ tags[0].tag }} {{ '%.2f'|format(tags[0][momentum_base]) }}
+                </div>
+                <div class="label">
+                    전략1
+                </div>
             </div>
-            <div class="label">
-                전략1
+            <div class="ui mini statistic">
+                <div class="value">
+                    {{ tags[1].tag }} {{ '%.2f'|format(tags[1][momentum_base]) }}
+                </div>
+                <div class="label">
+                    전략2
+                </div>
             </div>
-        </div>
-        <div class="ui mini statistic">
-            <div class="value">
-                {{ tags[1].tag }} {{ '%.2f'|format(tags[1].month3) }}
+            <div class="ui mini statistic">
+                <div class="value">
+                    {{ tags[2].tag }} {{ '%.2f'|format(tags[2][momentum_base]) }}
+                </div>
+                <div class="label">
+                    전략3
+                </div>
             </div>
-            <div class="label">
-                전략2
-            </div>
-        </div>
-        <div class="ui mini statistic">
-            <div class="value">
-                {{ tags[2].tag }} {{ '%.2f'|format(tags[2].month3) }}
-            </div>
-            <div class="label">
-                전략3
-            </div>
-        </div>
+        {% endif %}
     </div>
     <div class="content">
 
@@ -82,27 +84,27 @@
                 <tr>
                     <th>종목코드</th>
                     <th>
-                        <a href="{{ url_for('etfs') }}?order_by=title&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">종목명</a>
+                        <a href="{{ url_for('etfs', etf_type=etf_type) }}?order_by=title&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">종목명</a>
                         {% if order_by == 'title' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
                     </th>
                     <th>
-                        <a href="{{ url_for('etfs') }}?order_by=month1&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">1개월</a>
+                        <a href="{{ url_for('etfs', etf_type=etf_type) }}?order_by=month1&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">1개월</a>
                         {% if order_by == 'month1' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
                     </th>
                     <th>
-                        <a href="{{ url_for('etfs') }}?order_by=month3&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">3개월</a>
+                        <a href="{{ url_for('etfs', etf_type=etf_type) }}?order_by=month3&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">3개월</a>
                         {% if order_by == 'month3' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
                     </th>
                     <th>
-                        <a href="{{ url_for('etfs') }}?order_by=month6&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">6개월</a>
+                        <a href="{{ url_for('etfs', etf_type=etf_type) }}?order_by=month6&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">6개월</a>
                         {% if order_by == 'month6' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
                     </th>
                     <th>
-                        <a href="{{ url_for('etfs') }}?order_by=month12&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">12개월</a>
+                        <a href="{{ url_for('etfs', etf_type=etf_type) }}?order_by=month12&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">12개월</a>
                         {% if order_by == 'month12' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
                     </th>
                     <th>
-                        <a href="{{ url_for('etfs') }}?order_by=cost&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">수수료</a>
+                        <a href="{{ url_for('etfs', etf_type=etf_type) }}?order_by=cost&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}">수수료</a>
                         {% if order_by == 'cost' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
                     </th>
                     <th>운용사</th>
@@ -129,7 +131,7 @@
                 {% endfor %}
             </tbody>
         </table>
-        <h5 class="ui header">전략별 모멘텀 (3개월 기준)</h5>
+        <h5 class="ui header">전략별 모멘텀 ({{momentum_base_kr}} 기준)</h5>
         <table class="ui basic compact table">
             <thead>
                 <tr>
@@ -155,7 +157,7 @@
             </tbody>
         </table>
         {% for tag in tags %}
-        <h5 class="ui header">{{ tag.tag }} {{ '%.2f'|format(tag.month3) }}</h5>
+        <h5 class="ui header">{{ tag.tag }} {{ '%.2f'|format(tag[momentum_base]) }}</h5>
         <table class="ui compact table">
             <thead>
                 <tr>

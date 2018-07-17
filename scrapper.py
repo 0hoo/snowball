@@ -288,8 +288,9 @@ def parse_json(code):
     stock = db.save_stock(stock)
 
 
-def parse_etf(code, tag):
+def parse_etf(code, tag, etf_type):
     url = NAVER + code
+    print(url)
     tree = tree_from_url(url, 'euc-kr')
 
     title = tree.xpath('//*[@id="middle"]/div[1]/div[1]/h2/a')[0].text
@@ -312,16 +313,25 @@ def parse_etf(code, tag):
         'month6': month6,
         'month12': month12,
         'cost': cost,
-        'tags': tags
+        'tags': tags,
+        'type': etf_type,
     })
 
+
 def parse_etfs():
-    f = codecs.open('dual_etf.txt', 'r', 'utf-8')
-    lines = f.readlines()
-    for line in lines:
-        line = line.strip()
-        if not line:
-            continue
-        words = line.split(' ')
-        parse_etf(words[-1], words[0])
-    f.close()
+    with codecs.open('dual_etf.txt', 'r', 'utf-8') as f:
+        lines = f.readlines()
+        for line in lines:
+            parse_line(line, 'domestic')
+    with codecs.open('international_etf.txt', 'r', 'utf-8') as f:
+        lines = f.readlines()
+        for line in lines:
+            parse_line(line, 'international')
+
+
+def parse_line(line: str, etf_type: str):
+    line = line.strip()
+    if not line:
+        return
+    words = line.split(' ')
+    parse_etf(words[-1], words[0], etf_type)

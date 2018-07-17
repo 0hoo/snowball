@@ -300,11 +300,13 @@ class ETFTag:
         return mean_or_zero([etf['month12'] for etf in self.etfs])
 
 
-@app.route('/etfs')
-def etfs():
-    order_by = request.args.get('order_by', 'month3')
+@app.route('/etfs/<etf_type>')
+def etfs(etf_type='domestic'):
+    momentum_base = 'month3' if etf_type == 'domestic' else 'month6'
+    momentum_base_kr = '3개월' if etf_type == 'domestic' else '6개월'
+    order_by = request.args.get('order_by', momentum_base)
     ordering = request.args.get('ordering', 'desc')
-    etfs = db.all_etf(order_by=order_by, ordering=ordering)
+    etfs = db.all_etf(order_by=order_by, ordering=ordering, etf_type=etf_type)
     bond_etfs = ['148070', '152380']
     tags = defaultdict(list)
     for etf in etfs:
@@ -313,17 +315,18 @@ def etfs():
     tags = {k: ETFTag(k, v) for k, v in tags.items()}
     
     stat = {}
-    etfs_by_month3 = [etf for etf in db.all_etf(order_by='month3', ordering='desc') if etf['month3'] != 0]
-    no_bond_etfs = sorted([etf for etf in etfs_by_month3 if etf['code'] not in bond_etfs], key=lambda x: x.get('month3', 0), reverse=True)
-    stat['absolute_momentum_month3_avg'] = mean_or_zero([etf['month3'] for etf in no_bond_etfs])
+    etfs_by_momentum_base = [etf for etf in db.all_etf(order_by=momentum_base, ordering='desc', etf_type=etf_type) if etf[momentum_base] != 0]
+    no_bond_etfs = sorted([etf for etf in etfs_by_momentum_base if etf['code'] not in bond_etfs], key=lambda x: x.get(momentum_base, 0), reverse=True)
+    stat['absolute_momentum_momentum_base_avg'] = mean_or_zero([etf[momentum_base] for etf in no_bond_etfs])
     stat['absolute_momentum_high'] = no_bond_etfs[0]
-    stat['relative_momentum_etf'] = etfs_by_month3[0]
+    stat['relative_momentum_etf'] = etfs_by_momentum_base[0]
     
-    tags = sorted(tags.values(), key=lambda t: t.month3, reverse=True)
+    tags = sorted(tags.values(), key=lambda t: getattr(t, momentum_base), reverse=True)
     
     filters = db.all_filters()
     
-    return render_template('etfs.html', VERSION=VERSION, INTEREST=INTEREST, filters=filters, etfs=etfs, order_by=order_by, ordering=ordering, stat=stat, tags=tags)
+    return render_template('etfs.html', VERSION=VERSION, INTEREST=INTEREST, filters=filters, etfs=etfs, order_by=order_by, ordering=ordering, 
+        stat=stat, tags=tags, etf_type=etf_type, momentum_base=momentum_base, momentum_base_kr=momentum_base_kr)
 
 
 if __name__ == '__main__':

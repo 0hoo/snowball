@@ -67,7 +67,8 @@
             <a href="{{ url_for('stocks', status='starred') }}" class="item">관심</a>
             <a href="{{ url_for('stocks', status='starredorowned') }}" class="item">보유 | 관심</a>
             <a href="{{ url_for('stocks', status='bad') }}" class="header item">마이너스</a>
-            <a href="{{ url_for('etfs') }}" class="header item">ETF</a>
+            <a href="{{ url_for('etfs', etf_type='domestic') }}" class="header item">ETF</a>
+            <a href="{{ url_for('etfs', etf_type='international') }}" class="header item">해외ETF</a>
             <div class="ui dropdown item">
                 필터
                 <i class="dropdown icon"></i>

@@ -644,7 +644,7 @@ def etf_by_code(code) -> ETF:
     return ETF(db.etf.find_one({'code': code}))
 
 
-def all_etf(order_by='title', ordering='asc'):
-    ETFs = [ETF(dict) for dict in db.etf.find()]
+def all_etf(order_by='title', ordering='asc', etf_type='domestic'):
+    ETFs = [ETF(dict) for dict in db.etf.find({'type': etf_type})]
     ETFs = sorted(ETFs, key=partial(attr_or_key_getter, order_by), reverse=(ordering != 'asc'))
     return ETFs
