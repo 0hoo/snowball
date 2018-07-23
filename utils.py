@@ -27,3 +27,10 @@ def attr_or_key_getter(name, obj):
         return getattr(obj, name)
     except AttributeError:
         return obj.get(name, 0)
+
+
+def first_or_none(iter):
+    try:
+        return iter[0]
+    except IndexError:
+        return None
