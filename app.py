@@ -18,8 +18,9 @@ INTEREST = 2.25
 
 @app.route('/stocks')
 @app.route('/stocks/<status>')
+@app.route('/stocks/<status>/<alt>')
 @app.route('/')
-def stocks(status=None):
+def stocks(status=None, alt=None):
     find = None
     stat = {}
     if status == 'starred':
@@ -64,7 +65,8 @@ def stocks(status=None):
 
     return render_template('stocks.html', VERSION=VERSION, stocks=stocks, order_by=order_by, ordering=ordering, status=status,
         available_filter_options=db.available_filter_options, filters=filters,
-        current_filter=current_filter, stat=stat, available_rank_options=db.available_rank_options)
+        current_filter=current_filter, stat=stat, available_rank_options=db.available_rank_options,
+        alt=alt)
 
 
 @app.route('/stocks/filter/new')
@@ -143,7 +145,7 @@ def stocks_add_rank_option(filter_id):
         options.append(rank_option_to_add._asdict())
         db.save_filter(current_filter)
 
-        return redirect(url_for('stocks', filter_id=filter_id))
+        return redirect(url_for('stocks', filter_id=filter_id, status='rank', alt='alt1'))
 
     
 @app.route('/stocks/filter/<filter_id>/remove_rank_option')
@@ -157,7 +159,7 @@ def stocks_remove_rank_option(filter_id):
     current_filter['options'] = options
     db.save_filter(current_filter)
 
-    return redirect(url_for('stocks', filter_id=filter_id))
+    return redirect(url_for('stocks', filter_id=filter_id, status='rank', alt='alt1'))
 
 
 @app.route('/stocks/fill')
