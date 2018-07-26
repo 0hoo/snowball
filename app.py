@@ -12,7 +12,7 @@ from utils import mean_or_zero
 app = Flask(__name__)
 
 
-VERSION = 1.08
+VERSION = 1.09
 INTEREST = 2.25
 
 
