@@ -45,6 +45,12 @@ available_rank_options = [
     RankOption(key='rank_per', title='PER', asc=True, is_rankoption=True),
     RankOption(key='rank_last_year_gpa', title='GPA', asc=False, is_rankoption=True),
     RankOption(key='rank_dividend', title='배당', asc=False, is_rankoption=True),
+    RankOption(key='rank_beta', title='저베타', asc=True, is_rankoption=True),
+    RankOption(key='rank_month1', title='1개월', asc=False, is_rankoption=True),
+    RankOption(key='rank_month3', title='3개월', asc=False, is_rankoption=True),
+    RankOption(key='rank_month6', title='6개월', asc=False, is_rankoption=True),
+    RankOption(key='rank_month12', title='12개월', asc=False, is_rankoption=True),
+    RankOption(key='rank_relative_earning_rate', title='상대수익률', asc=False, is_rankoption=True),
 ]
 
 
@@ -57,12 +63,22 @@ available_filter_options = [
     FilterOption(key='pbr', title='PBR', morethan=None, value=None, is_boolean=False),
     FilterOption(key='per', title='PER', morethan=None, value=None, is_boolean=False),
     FilterOption(key='dividend_rate', title='배당률', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='beta', title='베타', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='foreigner_weight', title='외국인비중', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='floating_rate', title='유동주식비율', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='month1', title='1개월수익률', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='month3', title='3개월수익률', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='month6', title='6개월수익률', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='month12', title='12개월수익률', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='relative_earning_rate', title='상대수익률', morethan=None, value=None, is_boolean=False),
     FilterOption(key='countable_last_four_years_roes_count', title='계산가능ROE수', morethan=None, value=None, is_boolean=False),
     FilterOption(key='roe_max_diff', title='ROE최대최소차', morethan=None, value=None, is_boolean=False),
     FilterOption(key='last_four_years_roe_max_diff', title='최근4년ROE최대최소차', morethan=None, value=None, is_boolean=False),
     FilterOption(key='calculable_pbr_count', title='계산가능PBR수', morethan=None, value=None, is_boolean=False),
     FilterOption(key='rank_last_year_gpa', title='GPA순위', morethan=None, value=None, is_boolean=False),
     FilterOption(key='agg_rank', title='시총순위', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='rank_beta', title='저베타순위', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='is_closing_month_march', title='3월결산(참)', morethan=None, value=None, is_boolean=True),
     FilterOption(key='is_five_years_record_low', title='5년최저PBR(참)', morethan=None, value=None, is_boolean=True),
     FilterOption(key='has_consensus', title='컨센서스있음(참)', morethan=None, value=None, is_boolean=True),
     FilterOption(key='is_positive_consensus_roe', title='컨센서스>fROE(참)', morethan=None, value=None, is_boolean=True),
@@ -219,6 +235,18 @@ class Stock(UserDict):
     @property
     def dividend_rate(self) -> float:
         return self.get('dividend_rate', 0)
+
+    @property
+    def beta(self) -> float:
+        return self.get('beta', 0)
+
+    @property
+    def foreigner_weight(self) -> float:
+        return self.get('foreigner_weight', 0)
+
+    @property
+    def floating_rate(self) -> float:
+        return self.get('floating_rate', 0)
 
     @property
     def has_note(self) -> bool:
@@ -381,6 +409,10 @@ class Stock(UserDict):
     def rank_pbr(self):
         return self.get('rank_pbr')
 
+    @property
+    def is_closing_month_march(self):
+        return self.get('closing_month', 0) == 3
+
     def calc_gpa(self, gp):
         if not gp[1]:
             return None
@@ -410,6 +442,30 @@ class Stock(UserDict):
     @property
     def agg_rank(self):
         return self.get('agg_rank')
+
+    @property
+    def use_fnguide(self):
+        return self.get('use_fnguide', False)
+
+    @property
+    def month1(self):
+        return self.get('month1', 0)
+    
+    @property
+    def month3(self):
+        return self.get('month3', 0)
+
+    @property
+    def month6(self):
+        return self.get('month6', 0)
+
+    @property
+    def month12(self):
+        return self.get('month12', 0)
+
+    @property
+    def relative_earning_rate(self):
+        return self.get('relative_earning_rate', -100)
         
     def expected_rate_by_price(self, price: int) -> float:
         return self.calc_expected_rate(self.calc_future_bps, FUTURE, price=price)
@@ -553,6 +609,46 @@ def update_ranks():
     dicts = sorted([Stock(s) for s in dicts], key=partial(attr_or_key_getter, 'dividend_rate'), reverse=True)
     for idx, stock in enumerate(dicts):
         stock['rank_dividend'] = idx + 1
+        save_stock(stock)
+
+    dicts = sorted([Stock(s) for s in dicts if Stock(s).get('beta', 0) > 0], key=partial(attr_or_key_getter, 'beta'), reverse=False)
+    for idx, stock in enumerate(dicts):
+        stock['rank_beta'] = idx + 1
+        save_stock(stock)
+    dicts = db.stocks.find()
+    total = len(list(dicts))
+    for stock in [Stock(s) for s in db.stocks.find() if Stock(s).get('beta', 0) == 0]:
+        stock['rank_beta'] = total
+        save_stock(stock)
+
+    dicts = db.stocks.find()
+    dicts = sorted([Stock(s) for s in dicts], key=partial(attr_or_key_getter, 'floating_rate'), reverse=True)
+    for idx, stock in enumerate(dicts):
+        stock['rank_floating_rate'] = idx + 1
+        save_stock(stock)
+    dicts = sorted([Stock(s) for s in dicts], key=partial(attr_or_key_getter, 'foreigner_weight'), reverse=True)
+    for idx, stock in enumerate(dicts):
+        stock['rank_foreigner_weight'] = idx + 1
+        save_stock(stock)
+    dicts = sorted([Stock(s) for s in dicts], key=partial(attr_or_key_getter, 'month1'), reverse=True)
+    for idx, stock in enumerate(dicts):
+        stock['rank_month1'] = idx + 1
+        save_stock(stock)
+    dicts = sorted([Stock(s) for s in dicts], key=partial(attr_or_key_getter, 'month3'), reverse=True)
+    for idx, stock in enumerate(dicts):
+        stock['rank_month3'] = idx + 1
+        save_stock(stock)
+    dicts = sorted([Stock(s) for s in dicts], key=partial(attr_or_key_getter, 'month6'), reverse=True)
+    for idx, stock in enumerate(dicts):
+        stock['rank_month6'] = idx + 1
+        save_stock(stock)
+    dicts = sorted([Stock(s) for s in dicts], key=partial(attr_or_key_getter, 'month12'), reverse=True)
+    for idx, stock in enumerate(dicts):
+        stock['rank_month12'] = idx + 1
+        save_stock(stock)
+    dicts = sorted([Stock(s) for s in dicts], key=partial(attr_or_key_getter, 'relative_earning_rate'), reverse=True)
+    for idx, stock in enumerate(dicts):
+        stock['rank_relative_earning_rate'] = idx + 1
         save_stock(stock)
 
 

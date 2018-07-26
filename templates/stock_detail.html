@@ -54,11 +54,15 @@ function lineChart(elementId, label, labels, data, color) {
         <i class="icon heart red"></i>
       {% endif %}
       <div class="sub header">{{ stock.code }}
+        {% if stock.group %}
+        | {{ stock.group }} | {{ stock.subgroup }}
+        | {{ stock.closing_month }}월 결산
+        {% endif %}
         | <a href="{{ url_for('stock_records', code=stock.code) }}">가격분석</a>
-        <div class="ui label">PBR: {{ stock.rank_pbr }}위</div>
-        <div class="ui label">PER: {{ stock.rank_per }}위</div>
-        <div class="ui label">GPA: {{ stock.rank_last_year_gpa }}위</div>
-        <div class="ui label">시총: {{ stock.agg_rank }}위</div>
+        {% if stock.rank_pbr %}<div class="ui label">PBR: {{ stock.rank_pbr }}위</div>{% endif %}
+        {% if stock.rank_per %}<div class="ui label">PER: {{ stock.rank_per }}위</div>{% endif %}
+        {% if stock.rank_last_year_gpa %}<div class="ui label">GPA: {{ stock.rank_last_year_gpa }}위</div>{% endif %}
+        {% if stock.agg_rank %}<div class="ui label">시총: {{ stock.agg_rank }}위</div>{% endif %}
       </div>
   </div>
 </h3>
@@ -76,6 +80,12 @@ function lineChart(elementId, label, labels, data, color) {
                     <td>PER</td>
                     <td {% if stock.per < 0 %}class="error"{% elif stock.per > 25 %}class="warning"{% endif %}>{{ stock.per }}</td>
                 </tr>
+                {% if stock.forward_per %}
+                <tr>
+                    <td>Forward PER</td>
+                    <td>{{ stock.forward_per }}</td>
+                </tr>
+                {% endif %}
                 <tr>
                     <td>PBR</td>
                     <td {% if stock.pbr < 1 %}class="positive"{% endif %}>{{ stock.pbr }}</td>
@@ -100,6 +110,9 @@ function lineChart(elementId, label, labels, data, color) {
                     <tr><td><a href="http://finance.naver.com/item/main.nhn?code={{ stock.code }}" target="_blank">네이버</a></td></tr>
                     <tr><td><a href="http://finance.naver.com/item/coinfo.nhn?code={{ stock.code }}" target="_blank">종목분석</a></td></tr>
                     <tr><td><a href="{{ stock.financial_statements_url }}" target="_blank">주요재무정보</a></td></tr>
+                    {% if stock.use_fnguide %}
+                    <tr><td><a href="http://comp.fnguide.com/SVO2/ASP/SVD_main.asp?pGB=1&gicode=A{{ stock.code }}" target="_blank">FnGuide</a></td></tr>
+                    {% endif %}
                 </tbody>
             </table>
             <table class="ui table">
@@ -111,7 +124,7 @@ function lineChart(elementId, label, labels, data, color) {
                 <tbody>
                     <tr>
                         <td>
-                            <a href="{{ url_for('stock_refresh', code=stock.code) }}" class="ui button">가격 / 기대수익률 리프레시</a>
+                            <a href="{{ url_for('stock_refresh', code=stock.code) }}" class="ui button">가격 / 기대위익률 리프레시</a>
                         </td>
                     </tr>
                     <tr>
@@ -209,6 +222,17 @@ function lineChart(elementId, label, labels, data, color) {
                         <td>EPS 상승률</td>
                         <td>{{ '%.2f'|format(stock.eps_growth) }}</td>
                     </tr>
+                    {% if stock.YoY %}
+                    <tr>
+                        <td>YoY</td>
+                        <td {% if stock.YoY > 0 %}class="red"
+                            {% elif stock.YoY < 0 %}class="blue"
+                            {% else %}class="black"
+                            {% endif %}>
+                            {{ '%.2f'|format(stock.YoY or 0) }}
+                        </td>
+                    </tr>
+                    {% endif %}
                     <tr>
                         <td>PEG (현재PER)</td>
                         <td>{{ '%.2f'|format(stock.peg_current_per) }}</td>
@@ -295,12 +319,107 @@ function lineChart(elementId, label, labels, data, color) {
                     <button class="ui button" type="submit">저장</button>
                 </form>
             </div>
+            {% if stock.use_fnguide %}
             <table class="ui definition table">
             <tbody>
                 <tr>
-                    <td>배당</td>
-                    <td>{{ '%.2f'|format(stock.dividend_rate or 0) }}</td>
+                    <td>1개월</td>
+                    <td {% if stock.month1 > 0 %}class="red"
+                        {% elif stock.month1 < 0 %}class="blue"
+                        {% else %}class="black"
+                        {% endif %}>
+                        {{ '%.2f'|format(stock.month1 or 0) }}
+                    </td>
                 </tr>
+                <tr>
+                    <td>3개월</td>
+                    <td {% if stock.month3 > 0 %}class="red"
+                        {% elif stock.month3 < 0 %}class="blue"
+                        {% else %}class="black"
+                        {% endif %}>
+                        {{ '%.2f'|format(stock.month3 or 0) }}
+                    </td>
+                </tr>
+                <tr>
+                    <td>6개월</td>
+                    <td {% if stock.month6 > 0 %}class="red"
+                        {% elif stock.month6 < 0 %}class="blue"
+                        {% else %}class="black"
+                        {% endif %}>
+                        {{ '%.2f'|format(stock.month6 or 0) }}
+                    </td>
+                </tr>
+                <tr>
+                    <td>12개월</td>
+                    <td {% if stock.month12 > 0 %}class="red"
+                        {% elif stock.month12 < 0 %}class="blue"
+                        {% else %}class="black"
+                        {% endif %}>
+                        {{ '%.2f'|format(stock.month12 or 0) }}
+                    </td>
+                </tr>
+                <tr>
+                    <td>상대수익률</td>
+                    <td {% if stock.relative_earning_rate > 0 %}class="red"
+                        {% elif stock.relative_earning_rate < 0 %}class="blue"
+                        {% else %}class="black"
+                        {% endif %}>
+                        {{ '%.2f'|format(stock.relative_earning_rate or 0) }}
+                    </td>
+                </tr>
+            </tbody>
+            </table>
+            {% endif %}
+            <table class="ui definition table">
+            <tbody>
+                <tr>
+                    <td>
+                        배당
+                        {% if stock.rank_dividend and stock.dividend_rate > 0 %}
+                        <div class="ui label">{{ stock.rank_dividend }}위</div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ '%.2f'|format(stock.dividend_rate or 0) }}
+                    </td>
+                </tr>
+                {% if stock.use_fnguide %}
+                <tr>
+                    <td>
+                        외국인비중
+                        {% if stock.rank_foreigner_weight and stock.foreigner_weight > 0 %}
+                        <div class="ui label">{{ stock.rank_foreigner_weight }}위</div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ '%.2f'|format(stock.foreigner_weight or 0) }}
+                    </td>
+                </tr>
+                <tr>
+                    <td>베타
+                        {% if stock.rank_beta and stock.beta > 0 %}
+                        <div class="ui label">{{ stock.rank_beta }}위</div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ '%.2f'|format(stock.beta or 0) }}
+                    </td>
+                </tr>
+                <tr>
+                    <td>유동주식비율
+                        {% if stock.rank_floating_rate and stock.floating_rate > 0 %}
+                        <div class="ui label">{{ stock.rank_floating_rate }}위</div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ '%.2f'|format(stock.floating_rate or 0) }}
+                    </td>
+                </tr>
+                <tr>
+                    <td>우선주</td>
+                    <td>{% if stock.has_preferred_stock %}있음{% else %}없음{% endif %}</td>
+                </tr>
+                {% endif %}
                 </tbody>
             </table>
             <table class="ui table">
@@ -463,6 +582,16 @@ function lineChart(elementId, label, labels, data, color) {
                     <tr>
                         <td>컨센서스평균</td>
                         <td>{{ '%.2f'|format(stock.mean_consensus_roe or 0) }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if stock.consensus_count and stock.consensus_count > 0 %}
+                    <tr>
+                        <td>컨센서스평점</td>
+                        <td>{{ stock.consensus_point }} / 5.0</td>
+                    </tr>
+                    <tr>
+                        <td>컨센서스목표가 (기관수)</td>
+                        <td>{{ stock.consensus_price }} ({{ stock.consensus_count }})</td>
                     </tr>
                     {% endif %}
                 </tbody>

@@ -164,6 +164,37 @@ def parse_quarterly(code):
     stock.save_record()
 
 
+def parse_naver_company(code):
+    url = NAVER_COMPANY + code
+    print('네이버 {}'.format(url))
+    tree = tree_from_url(url)
+    
+    element = tree.xpath('//*[@id="pArea"]/div[1]/div/table/tr[3]/td/dl/dt[2]/b')
+    if not element:
+        print('수집 실패')
+        return False
+    bps = parse_int(element[0].text)
+    print('BPS: {}'.format(bps))
+
+    element = tree.xpath('//*[@id="pArea"]/div[1]/div/table/tr[3]/td/dl/dt[6]/b')
+    if element:
+        dividend_rate = parse_float(element[0].text)
+        print('배당률: {}'.format(dividend_rate))
+    else:
+        dividend_rate = 0
+        print('배당 수집 실패')
+        return False
+    
+    stock = {
+        'code': code,
+        'bps': bps,
+        'dividend_rate': dividend_rate,
+        'use_fnguide': False,
+    }
+    stock = db.save_stock(stock)
+    return stock
+
+
 def parse_snowball(code):
     if not parse_basic(code):
         print('수집 실패')
@@ -171,26 +202,8 @@ def parse_snowball(code):
 
     if not parse_fnguide(code):
         print('FnGuide 수집실패')
-        return
-    # print('종목 {} 스노우볼...'.format(code))
-    # url = NAVER_COMPANY + code
-    # print('네이버 {}'.format(url))
-    # tree = tree_from_url(url)
-    
-    # element = tree.xpath('//*[@id="pArea"]/div[1]/div/table/tr[3]/td/dl/dt[2]/b')
-    # if not element:
-    #     print('수집 실패')
-    #     return
-    # bps = parse_int(element[0].text)
-    # print('BPS: {}'.format(bps))
-
-    # element = tree.xpath('//*[@id="pArea"]/div[1]/div/table/tr[3]/td/dl/dt[6]/b')
-    # if element:
-    #     dividend_rate = parse_float(element[0].text)
-    #     print('배당률: {}'.format(dividend_rate))
-    # else:
-    #     dividend_rate = 0
-    #     print('배당 수집 실패')
+        if not parse_naver_company(code):
+            return
     
     print('종목 {} 스노우볼...'.format(code))
     url = NAVER_YEARLY % (code)
@@ -250,8 +263,6 @@ def parse_snowball(code):
 
     stock = {
         'code': code,
-        #'dividend_rate': dividend_rate,
-        #'bps': bps,
         'ROEs': ROEs,
         'last_year_index': last_year_index,
         'PBRs': PBRs,
@@ -355,7 +366,7 @@ def parse_fnguide(code: str):
     
     groups = first_or_none(tree.xpath('//*[@id="compBody"]/div[1]/div[1]/p/span[1]/text()'))
     groups = groups.split(' ')
-    group = groups[1]
+    group = groups[1] if len(groups) > 1 else None
     
     subgroup = first_or_none(tree.xpath('//*[@id="compBody"]/div[1]/div[1]/p/span[4]/text()'))
     subgroup = subgroup.replace('\xa0', '')
@@ -363,11 +374,9 @@ def parse_fnguide(code: str):
     closing_month = first_or_none(tree.xpath('//*[@id="compBody"]/div[1]/div[1]/p/span[6]/text()'))
     closing_month = parse_int(closing_month.split(' ')[0][:-1])
 
-    #per = parse_float(first_or_none(tree.xpath('//*[@id="corp_group2"]/dl[1]/dd/text()')))
     forward_per = parse_float(first_or_none(tree.xpath('//*[@id="corp_group2"]/dl[2]/dd/text()')))
     group_per = parse_float(first_or_none(tree.xpath('//*[@id="corp_group2"]/dl[3]/dd/text()')))
     
-    #pbr = parse_float(first_or_none(tree.xpath('//*[@id="corp_group2"]/dl[4]/dd/text()')))
     dividend_rate = parse_float(first_or_none(tree.xpath('//*[@id="corp_group2"]/dl[5]/dd/text()')))
     
     relative_earning_rate = parse_float(first_or_none(tree.xpath('//*[@id="svdMainChartTxt13"]/text()')))
@@ -419,7 +428,8 @@ def parse_fnguide(code: str):
         'consensus_point': consensus_point,
         'consensus_price': consensus_price,
         'consensus_count': consensus_count,
-        'bps': bps
+        'bps': bps,
+        'use_fnguide': True,
     }
     db.save_stock(stock)
     return True
