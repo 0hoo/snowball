@@ -583,74 +583,41 @@ def make_filter_option_func(filter_option):
     return filter_option_func
 
 
+def update_rank_by(stocks: List[Stock], key: str, rank_key: str, reverse: bool):
+    countable = [s for s in stocks if s.get(key, 0) > 0]
+    for idx, stock in enumerate(sorted(countable, key=partial(attr_or_key_getter, key), reverse=reverse)):
+        stock[rank_key] = idx + 1
+        save_stock(stock)
+    uncountable = [s for s in stocks if s.get(key, 0) == 0]
+    for stock in uncountable:
+        stock[rank_key] = len(stocks)
+    
+
 def update_ranks():
-    dicts = db.stocks.find()
-    dicts = sorted([Stock(s) for s in dicts], key=partial(attr_or_key_getter, 'last_year_gpa'), reverse=True)
-    for idx, stock in enumerate(dicts):
-        stock['rank_last_year_gpa'] = idx + 1
-        save_stock(stock)
-    dicts = sorted([Stock(s) for s in dicts], key=partial(attr_or_key_getter, 'agg_value'), reverse=True)
-    for idx, stock in enumerate(dicts):
-        stock['agg_rank'] = idx + 1
-        save_stock(stock)
-    dicts = sorted([Stock(s) for s in dicts], key=partial(attr_or_key_getter, 'pbr'), reverse=False)
-    for idx, stock in enumerate(dicts):
-        stock['rank_pbr'] = idx + 1
-        save_stock(stock)
-    dicts = sorted([Stock(s) for s in dicts], key=partial(attr_or_key_getter, 'per'), reverse=False)
-    for idx, stock in enumerate(dicts):
-        stock['rank_per'] = idx + 1
-        save_stock(stock)
-    dicts = sorted([Stock(s) for s in dicts], key=partial(attr_or_key_getter, 'dividend_rate'), reverse=True)
-    for idx, stock in enumerate(dicts):
-        stock['rank_dividend'] = idx + 1
-        save_stock(stock)
-
-    dicts = sorted([Stock(s) for s in dicts if Stock(s).get('beta', 0) > 0], key=partial(attr_or_key_getter, 'beta'), reverse=False)
-    for idx, stock in enumerate(dicts):
-        stock['rank_beta'] = idx + 1
-        save_stock(stock)
-    dicts = db.stocks.find()
-    total = len(list(dicts))
-    for stock in [Stock(s) for s in db.stocks.find() if Stock(s).get('beta', 0) == 0]:
-        stock['rank_beta'] = total
-        save_stock(stock)
-
-    dicts = db.stocks.find()
-    dicts = sorted([Stock(s) for s in dicts], key=partial(attr_or_key_getter, 'floating_rate'), reverse=True)
-    for idx, stock in enumerate(dicts):
-        stock['rank_floating_rate'] = idx + 1
-        save_stock(stock)
-    dicts = sorted([Stock(s) for s in dicts], key=partial(attr_or_key_getter, 'foreigner_weight'), reverse=True)
-    for idx, stock in enumerate(dicts):
-        stock['rank_foreigner_weight'] = idx + 1
-        save_stock(stock)
-    dicts = sorted([Stock(s) for s in dicts], key=partial(attr_or_key_getter, 'month1'), reverse=True)
-    for idx, stock in enumerate(dicts):
-        stock['rank_month1'] = idx + 1
-        save_stock(stock)
-    dicts = sorted([Stock(s) for s in dicts], key=partial(attr_or_key_getter, 'month3'), reverse=True)
-    for idx, stock in enumerate(dicts):
-        stock['rank_month3'] = idx + 1
-        save_stock(stock)
-    dicts = sorted([Stock(s) for s in dicts], key=partial(attr_or_key_getter, 'month6'), reverse=True)
-    for idx, stock in enumerate(dicts):
-        stock['rank_month6'] = idx + 1
-        save_stock(stock)
-    dicts = sorted([Stock(s) for s in dicts], key=partial(attr_or_key_getter, 'month12'), reverse=True)
-    for idx, stock in enumerate(dicts):
-        stock['rank_month12'] = idx + 1
-        save_stock(stock)
-    dicts = sorted([Stock(s) for s in dicts], key=partial(attr_or_key_getter, 'relative_earning_rate'), reverse=True)
-    for idx, stock in enumerate(dicts):
-        stock['rank_relative_earning_rate'] = idx + 1
-        save_stock(stock)
+    stocks = [Stock(s) for s in db.stocks.find()]
+    update_rank_by(stocks, 'last_year_gpa', 'rank_last_year_gpa', reverse=True)
+    update_rank_by(stocks, 'agg_value', 'agg_rank', reverse=True)
+    update_rank_by(stocks, 'pbr', 'rank_pbr', reverse=False)
+    update_rank_by(stocks, 'per', 'rank_per', reverse=False)
+    update_rank_by(stocks, 'dividend_rate', 'rank_dividend', reverse=True)
+    update_rank_by(stocks, 'beta', 'rank_beta', reverse=False)
+    update_rank_by(stocks, 'floating_rate', 'rank_floating_rate', reverse=True)
+    update_rank_by(stocks, 'foreigner_weight', 'rank_foreigner_weight', reverse=True)
+    update_rank_by(stocks, 'month1', 'rank_month1', reverse=True)
+    update_rank_by(stocks, 'month3', 'rank_month3', reverse=True)
+    update_rank_by(stocks, 'month6', 'rank_month3', reverse=True)
+    update_rank_by(stocks, 'month12', 'rank_month3', reverse=True)
+    update_rank_by(stocks, 'relative_earning_rate', 'rank_relative_earning_rate', reverse=True)
 
 
 def all_stocks(order_by='title', ordering='asc', find=None, filter_by_expected_rate=True, filter_bad=True, filter_options=[], rank_options=[]) -> List[Stock]:
     stocks = [Stock(dict) for dict in (db.stocks.find(find) if find else db.stocks.find())]
 
     filter_funcs = []
+
+    if filter_options or rank_options:
+        filter_by_expected_rate = False
+        filter_bad = False
 
     if filter_by_expected_rate:
         filter_by_expected_rate_func = lambda s: (s.expected_rate > 0 and filter_bad) or (s.expected_rate < 0 and not filter_bad)

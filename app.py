@@ -7,7 +7,7 @@ from bson.objectid import ObjectId
 import db
 from scrapper import parse_snowball
 from utils import mean_or_zero
-
+from etftag import ETFTag
 
 app = Flask(__name__)
 
@@ -278,28 +278,6 @@ def add_stock():
 def remove_stock(code):
     db.remove_stock(code)
     return redirect(url_for('stocks'))
-
-
-class ETFTag:
-    def __init__(self, tag, etfs=[]):
-        self.tag = tag
-        self.etfs = sorted(etfs, key=lambda e: e.get('month3', 0), reverse=True)
-
-    @property
-    def month1(self):
-        return mean_or_zero([etf['month1'] for etf in self.etfs])
-
-    @property
-    def month3(self):
-        return mean_or_zero([etf['month3'] for etf in self.etfs])
-    
-    @property
-    def month6(self):
-        return mean_or_zero([etf['month6'] for etf in self.etfs])
-
-    @property
-    def month12(self):
-        return mean_or_zero([etf['month12'] for etf in self.etfs])
 
 
 @app.route('/etfs/<etf_type>')
