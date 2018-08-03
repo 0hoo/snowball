@@ -111,7 +111,7 @@ function lineChart(elementId, label, labels, data, color) {
                     <tr><td><a href="http://finance.naver.com/item/coinfo.nhn?code={{ stock.code }}" target="_blank">종목분석</a></td></tr>
                     <tr><td><a href="{{ stock.financial_statements_url }}" target="_blank">주요재무정보</a></td></tr>
                     {% if stock.use_fnguide %}
-                    <tr><td><a href="http://comp.fnguide.com/SVO2/ASP/SVD_main.asp?pGB=1&gicode=A{{ stock.code }}" target="_blank">FnGuide</a></td></tr>
+                    <tr><td><a href="http://comp.fnguide.com/SVO2/ASP/SVD_main.asp?pGB=1&gicode=A{{ stock.code }}&MenuYn=Y" target="_blank">FnGuide</a></td></tr>
                     {% endif %}
                 </tbody>
             </table>
@@ -238,7 +238,7 @@ function lineChart(elementId, label, labels, data, color) {
                         <td>{{ '%.2f'|format(stock.peg_current_per) }}</td>
                     </tr>
                     <tr>
-                        <td>PER (평균PER)</td>
+                        <td>PEG (평균PER)</td>
                         <td>{{ '%.2f'|format(stock.peg_mean_per) }}</td>
                     </tr>
                 </tbody>
