@@ -413,6 +413,22 @@ class Stock(UserDict):
     def is_closing_month_march(self):
         return self.get('closing_month', 0) == 3
 
+    @property
+    def current_assets(self):
+        return self.get('current_assets')
+
+    @property
+    def current_liability(self):
+        return self.get('current_liability')
+
+    @property
+    def current_ratio(self):
+        return [(c[0][0], c[0][1] / c[1][1] * 100) for c in zip(self.current_assets, self.current_liability)]
+
+    @property
+    def current_ratio_stat(self):
+        return zip(self.current_assets, self.current_liability, self.current_ratio)
+
     def calc_gpa(self, gp):
         if not gp[1]:
             return None

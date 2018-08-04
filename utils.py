@@ -34,3 +34,7 @@ def first_or_none(iter):
         return iter[0]
     except IndexError:
         return None
+
+
+def float_or_none(x):
+    return None if not x else float(x.replace(',', ''))
