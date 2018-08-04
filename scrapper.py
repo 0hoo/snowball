@@ -12,7 +12,7 @@ from lxml import html
 
 import db
 from db import Quarter
-from utils import parse_float, parse_int, first_or_none
+from utils import parse_float, parse_int, first_or_none, float_or_none
 
 
 DAUM_BASIC = 'http://finance.daum.net/item/main.daum?code='
@@ -22,12 +22,12 @@ NAVER_QUARTERLY = "http://companyinfo.stock.naver.com/v1/company/ajax/cF1001.asp
 NAVER_JSON1 = 'http://companyinfo.stock.naver.com/v1/company/cF4002.aspx?cmp_cd=%s&frq=0&rpt=1&finGubun=MAIN&frqTyp=0&cn='
 NAVER = 'https://finance.naver.com/item/main.nhn?code='
 FNGUIDE = 'http://comp.fnguide.com/SVO2/ASP/SVD_main.asp?pGB=1&gicode=A'
-
+FNGUIDE_FINANCIAL_STMT = 'http://comp.fnguide.com/SVO2/ASP/SVD_Finance.asp?pGB=1&gicode=A%s&cID=&MenuYn=Y&ReportGB=&NewMenuID=103'
 
 LAST_YEAR = str(datetime.now().year - 1)
 
 
-def fill_company(filename='company.csv'):
+def fill_company(filename: str='company.csv'):
     random.seed()
     with open(filename, newline='', encoding='UTF8') as csvfile:
         reader = csv.DictReader(csvfile)
@@ -42,7 +42,7 @@ def fill_company(filename='company.csv'):
     db.update_ranks()
 
 
-def parse_snowball_stocks(filter_bad=True, only_starred_owned=False):
+def parse_snowball_stocks(filter_bad: bool=True, only_starred_owned: bool=False):
     random.seed()
     find = {'$or': [{'starred': True}, {'owned': True}]} if only_starred_owned else None
     stocks =  db.all_stocks(find=find, filter_bad=filter_bad)
@@ -54,7 +54,7 @@ def parse_snowball_stocks(filter_bad=True, only_starred_owned=False):
     db.update_ranks()
 
 
-def tree_from_url(url, decode=None):
+def tree_from_url(url: str, decode: str=None):
     content = requests.get(url).content
     if decode:
         content = content.decode(decode)
@@ -89,9 +89,6 @@ def parse_basic(code):
     trade_volume = parse_float(tree.xpath('//*[@id="topWrap"]/div[1]/ul[2]/li[5]/span[1]')[0].text)
     trade_value = parse_float(tree.xpath('//*[@id="topWrap"]/div[1]/ul[2]/li[6]/span')[0].text)
 
-    #agg_rank = tree.xpath('//*[@id="stockContent"]/ul[2]/li[2]/dl[2]/dd/span[2]')[0].text
-    #agg_rank = int(agg_rank[1:])
-
     agg_value = parse_float(tree.xpath('//*[@id="stockContent"]/ul[2]/li[2]/dl[2]/dd')[0].text)
 
     print('종목명: {title} 현재가: {price}'.format(title=title, price=price))
@@ -113,15 +110,7 @@ def parse_basic(code):
     return True
 
 
-def first_or_none(iter):
-    return iter[0] if iter else None
-
-
-def float_or_none(x):
-    return None if not x else float(x.replace(',', ''))
-
-
-def quarter_from(text):
+def quarter_from(text: str) -> Quarter:
     if (not text) or ('/' not in text):
         return None
     estimated = text.endswith('(E)')
@@ -130,7 +119,7 @@ def quarter_from(text):
     return Quarter(year=int(comp[0]), number=int(int(comp[1]) / 3), estimated=estimated)
 
 
-def parse_quarterly(code):
+def parse_quarterly(code: str):
     print('분기 {}'.format(code))
     url = NAVER_QUARTERLY % (code)
     tree = tree_from_url(url)
@@ -159,12 +148,11 @@ def parse_quarterly(code):
         'QROEs': QROEs,
         'QBPSs': QBPSs,
     }
-    print(stock)
     stock = db.save_stock(stock)
     stock.save_record()
 
 
-def parse_naver_company(code):
+def parse_naver_company(code: str):
     url = NAVER_COMPANY + code
     print('네이버 {}'.format(url))
     tree = tree_from_url(url)
@@ -195,12 +183,14 @@ def parse_naver_company(code):
     return stock
 
 
-def parse_snowball(code):
+def parse_snowball(code: str):
     if not parse_basic(code):
         print('수집 실패')
         return
 
-    if not parse_fnguide(code):
+    if parse_fnguide(code):
+        parse_fnguide_financial_statements(code)
+    else:
         print('FnGuide 수집실패')
         if not parse_naver_company(code):
             return
@@ -283,7 +273,7 @@ def parse_snowball(code):
     parse_json(code)
 
 
-def parse_json(code):
+def parse_json(code: str):
     print('종목 {} JSON...'.format(code))
     url = NAVER_JSON1 % (code)
     urlopen = urllib.request.urlopen(url)
@@ -305,7 +295,7 @@ def parse_json(code):
     stock = db.save_stock(stock)
 
 
-def parse_etf(code, tag, etf_type):
+def parse_etf(code: str, tag: str, etf_type: str):
     url = NAVER + code
     print(url)
     tree = tree_from_url(url, 'euc-kr')
@@ -430,6 +420,50 @@ def parse_fnguide(code: str):
         'consensus_count': consensus_count,
         'bps': bps,
         'use_fnguide': True,
+    }
+    db.save_stock(stock)
+    return True
+
+
+def parse_fnguide_financial_statements(code: str) -> bool:
+    print('종목 {} FnGuide 재무재표 ...'.format(code))
+    url = FNGUIDE_FINANCIAL_STMT % (code)
+    print('FnGuide 재무재표 {}'.format(url))
+    tree = tree_from_url(url)
+    
+    years = tree.xpath('//*[@id="divDaechaY"]/table/thead/tr/th/text()')
+    years = [int(y.split('/')[0]) for y in years[1:]]
+
+    row_headers = tree.xpath("//*[@id='divDaechaY']/table/tbody/tr/th//text()")
+    row_headers = [h.strip() for h in row_headers if h.strip()]
+    row_headers = [h.replace('\xa0', '') for h in row_headers if h != '계산에 참여한 계정 펼치기']
+
+    try:
+        i = row_headers.index('유동자산')
+    except ValueError:
+        return False
+    current_assets = [parse_int(v) for v in tree.xpath("//*[@id='divDaechaY']/table/tbody/tr")[i].xpath('td/text()')]
+
+    try:
+        i = row_headers.index('유동부채')
+    except ValueError:
+        return False
+    current_liability = [parse_int(v) for v in tree.xpath("//*[@id='divDaechaY']/table/tbody/tr")[i].xpath('td/text()')]
+
+    print(years)
+    print(current_assets)
+    print(current_liability)
+
+    if len(years) != len(current_assets):
+        return False
+
+    current_assets = list(zip(years, current_assets))
+    current_liability = list(zip(years, current_liability))
+
+    stock = {
+        'code': code,
+        'current_assets': current_assets,
+        'current_liability': current_liability,
     }
     db.save_stock(stock)
     return True
