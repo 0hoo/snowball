@@ -440,30 +440,40 @@ def parse_fnguide_financial_statements(code: str) -> bool:
 
     try:
         i = row_headers.index('유동자산')
+        current_assets = [parse_int(v) for v in tree.xpath("//*[@id='divDaechaY']/table/tbody/tr")[i].xpath('td/text()')]
     except ValueError:
-        return False
-    current_assets = [parse_int(v) for v in tree.xpath("//*[@id='divDaechaY']/table/tbody/tr")[i].xpath('td/text()')]
+        current_assets = []
 
     try:
         i = row_headers.index('유동부채')
+        current_liability = [parse_int(v) for v in tree.xpath("//*[@id='divDaechaY']/table/tbody/tr")[i].xpath('td/text()')]
     except ValueError:
-        return False
-    current_liability = [parse_int(v) for v in tree.xpath("//*[@id='divDaechaY']/table/tbody/tr")[i].xpath('td/text()')]
+        current_liability = []
 
+    try:
+        i = row_headers.index('부채')
+        total_liability = [parse_int(v) for v in tree.xpath("//*[@id='divDaechaY']/table/tbody/tr")[i].xpath('td/text()')]
+    except:
+        total_liability = []
+
+    
     print(years)
     print(current_assets)
     print(current_liability)
+    print(total_liability)
 
     if len(years) != len(current_assets):
         return False
 
     current_assets = list(zip(years, current_assets))
     current_liability = list(zip(years, current_liability))
+    total_liability = list(zip(years, total_liability))
 
     stock = {
         'code': code,
         'current_assets': current_assets,
         'current_liability': current_liability,
+        'total_liability': total_liability,
     }
     db.save_stock(stock)
     return True

@@ -415,11 +415,15 @@ class Stock(UserDict):
 
     @property
     def current_assets(self):
-        return self.get('current_assets')
+        return self.get('current_assets', [])
 
     @property
     def current_liability(self):
-        return self.get('current_liability')
+        return self.get('current_liability', [])
+
+    @property
+    def total_liability(self):
+        return self.get('total_liability', [])
 
     @property
     def current_ratio(self):
@@ -427,7 +431,19 @@ class Stock(UserDict):
 
     @property
     def current_ratio_stat(self):
-        return zip(self.current_assets, self.current_liability, self.current_ratio)
+        return zip(self.current_assets, self.current_liability, self.current_ratio, self.total_liability)
+
+    @property
+    def NCAV(self):
+        asset = [c[1] for c in self.current_assets if c[0] == LAST_YEAR]
+        liability = [c[1] for c in self.total_liability if c[0] == LAST_YEAR]
+        if not asset or not liability: 
+            return 0
+        return asset[0] - liability[0]
+
+    @property
+    def NCAV_ratio(self):
+        return self.NCAV / self.get('agg_value', 1) * 100
 
     def calc_gpa(self, gp):
         if not gp[1]:
@@ -605,13 +621,14 @@ def make_filter_option_func(filter_option):
 
 
 def update_rank_by(stocks: List[Stock], key: str, rank_key: str, reverse: bool):
-    countable = [s for s in stocks if s.get(key, 0) > 0]
+    countable = [s for s in stocks if attr_or_key_getter(key, s) > 0]
     for idx, stock in enumerate(sorted(countable, key=partial(attr_or_key_getter, key), reverse=reverse)):
         stock[rank_key] = idx + 1
         save_stock(stock)
-    uncountable = [s for s in stocks if s.get(key, 0) == 0]
+    uncountable = [s for s in stocks if attr_or_key_getter(key, s) <= 0]
     for stock in uncountable:
         stock[rank_key] = len(stocks)
+        save_stock(stock)
     
 
 def update_ranks():
@@ -629,6 +646,7 @@ def update_ranks():
     update_rank_by(stocks, 'month6', 'rank_month3', reverse=True)
     update_rank_by(stocks, 'month12', 'rank_month3', reverse=True)
     update_rank_by(stocks, 'relative_earning_rate', 'rank_relative_earning_rate', reverse=True)
+    update_rank_by(stocks, 'NCAV_ratio', 'rank_ncav', reverse=True)
 
 
 def all_stocks(order_by='title', ordering='asc', find=None, filter_by_expected_rate=True, filter_bad=True, filter_options=[], rank_options=[]) -> List[Stock]:
