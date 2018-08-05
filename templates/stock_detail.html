@@ -706,20 +706,35 @@ function lineChart(elementId, label, labels, data, color) {
                         <th>유동자산</th>
                         <th>유동부채</th>
                         <th>유동비율</th>
+                        <th>부채</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for current_asset, current_liability, current_ratio in stock.current_ratio_stat %}
+                    {% for current_asset, current_liability, current_ratio, total_liability in stock.current_ratio_stat %}
                     <tr>
                         <td>{{current_asset.0}}</td>
                         <td>{{current_asset.1}}</td>
                         <td>{{current_liability.1}}</td>
                         <td>{{ '%.2f'|format(current_ratio.1) }}</td>
+                        <td>{{total_liability.1}}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
-
+            {% if stock.NCAV != 0 %}
+            <table class="ui definition table">
+                <tbody>
+                    <tr>
+                        <td>NCAV</td>
+                        <td>{{ stock.NCAV }}</td>
+                    </tr>
+                    <tr>
+                        <td>NCAV / 시총</td>
+                        <td>{{  '%.2f'|format(stock.NCAV_ratio) }}</td>
+                    </tr>
+                </tbody>
+            </table>
+            {% endif %}
             <form class="ui form" action="{{ url_for('stock_my_price', code=stock.code) }}" method="post">
                 <div class="field">
                 <label>평균 단가</label>
