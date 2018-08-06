@@ -616,11 +616,11 @@ def make_filter_option_func(filter_option):
 
 
 def update_rank_by(stocks: List[Stock], key: str, rank_key: str, reverse: bool):
-    countable = [s for s in stocks if attr_or_key_getter(key, s) > 0]
+    countable = [s for s in stocks if attr_or_key_getter(key, s, default_value=None)]
     for idx, stock in enumerate(sorted(countable, key=partial(attr_or_key_getter, key), reverse=reverse)):
         stock[rank_key] = idx + 1
         save_stock(stock)
-    uncountable = [s for s in stocks if attr_or_key_getter(key, s) <= 0]
+    uncountable = [s for s in stocks if not attr_or_key_getter(key, s, default_value=None)]
     for stock in uncountable:
         stock[rank_key] = len(stocks)
         save_stock(stock)
