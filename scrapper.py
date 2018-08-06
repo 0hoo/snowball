@@ -1,3 +1,4 @@
+from typing import List
 import csv
 import time
 import random
@@ -438,24 +439,16 @@ def parse_fnguide_financial_statements(code: str) -> bool:
     row_headers = [h.strip() for h in row_headers if h.strip()]
     row_headers = [h.replace('\xa0', '') for h in row_headers if h != '계산에 참여한 계정 펼치기']
 
-    try:
-        i = row_headers.index('유동자산')
-        current_assets = [parse_int(v) for v in tree.xpath("//*[@id='divDaechaY']/table/tbody/tr")[i].xpath('td/text()')]
-    except ValueError:
-        current_assets = []
+    def row_values_asset_table(key: str) -> List[str]:
+        try:
+            i = row_headers.index(key)
+            return [parse_int(v) for v in tree.xpath("//*[@id='divDaechaY']/table/tbody/tr")[i].xpath('td/text()')]
+        except ValueError:
+            return []
 
-    try:
-        i = row_headers.index('유동부채')
-        current_liability = [parse_int(v) for v in tree.xpath("//*[@id='divDaechaY']/table/tbody/tr")[i].xpath('td/text()')]
-    except ValueError:
-        current_liability = []
-
-    try:
-        i = row_headers.index('부채')
-        total_liability = [parse_int(v) for v in tree.xpath("//*[@id='divDaechaY']/table/tbody/tr")[i].xpath('td/text()')]
-    except:
-        total_liability = []
-
+    current_assets = row_values_asset_table('유동자산')
+    current_liability = row_values_asset_table('유동부채')
+    total_liability = row_values_asset_table('부채')
     
     print(years)
     print(current_assets)

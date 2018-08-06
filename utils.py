@@ -22,11 +22,11 @@ def parse_int(str):
         return 0
 
 
-def attr_or_key_getter(name, obj):
+def attr_or_key_getter(name, obj, default_value=0):
     try:
         return getattr(obj, name)
     except AttributeError:
-        return obj.get(name, 0)
+        return obj.get(name, default_value)
 
 
 def first_or_none(iter):
