@@ -7,6 +7,7 @@ from statistics import mean
 import urllib.request
 import json
 import codecs
+from functools import partial
 
 import requests
 from lxml import html
@@ -426,12 +427,15 @@ def parse_fnguide(code: str):
     return True
 
 
-def parse_fnguide_financial_statements(code: str) -> bool:
-    print('종목 {} FnGuide 재무재표 ...'.format(code))
-    url = FNGUIDE_FINANCIAL_STMT % (code)
-    print('FnGuide 재무재표 {}'.format(url))
-    tree = tree_from_url(url)
-    
+def row_values_table(tree, table_id: str, row_headers: List[str], key: str) -> List[str]:
+    try:
+        i = row_headers.index(key)
+        return [parse_int(v) for v in tree.xpath("//*[@id='" + table_id + "']/table/tbody/tr")[i].xpath('td/text()')]
+    except ValueError:
+        return []
+
+
+def parse_fnguide_financial_table(tree) -> dict:
     years = tree.xpath('//*[@id="divDaechaY"]/table/thead/tr/th/text()')
     years = [int(y.split('/')[0]) for y in years[1:]]
 
@@ -439,34 +443,65 @@ def parse_fnguide_financial_statements(code: str) -> bool:
     row_headers = [h.strip() for h in row_headers if h.strip()]
     row_headers = [h.replace('\xa0', '') for h in row_headers if h != '계산에 참여한 계정 펼치기']
 
-    def row_values_asset_table(key: str) -> List[str]:
-        try:
-            i = row_headers.index(key)
-            return [parse_int(v) for v in tree.xpath("//*[@id='divDaechaY']/table/tbody/tr")[i].xpath('td/text()')]
-        except ValueError:
-            return []
+    row_values = partial(row_values_table, tree, 'divDaechaY', row_headers)
+    current_assets = row_values('유동자산')
+    current_liability = row_values('유동부채')
+    total_liability = row_values('부채')
 
-    current_assets = row_values_asset_table('유동자산')
-    current_liability = row_values_asset_table('유동부채')
-    total_liability = row_values_asset_table('부채')
-    
     print(years)
     print(current_assets)
     print(current_liability)
     print(total_liability)
 
     if len(years) != len(current_assets):
-        return False
+        return {}
 
     current_assets = list(zip(years, current_assets))
     current_liability = list(zip(years, current_liability))
     total_liability = list(zip(years, total_liability))
 
-    stock = {
-        'code': code,
+    return {
         'current_assets': current_assets,
         'current_liability': current_liability,
         'total_liability': total_liability,
     }
+
+
+def parse_fnguide_profit_table(tree) -> dict:
+    years = tree.xpath('//*[@id="divSonikY"]/table/thead/tr/th/text()')
+    years = [int(y.split('/')[0]) for y in years if len(y.split('/')) > 1]
+
+    row_headers = tree.xpath("//*[@id='divSonikY']/table/tbody/tr/th//text()")
+    row_headers = [h.strip() for h in row_headers if h.strip()]
+    row_headers = [h.replace('\xa0', '') for h in row_headers if h != '계산에 참여한 계정 펼치기']
+
+    row_values = partial(row_values_table, tree, 'divSonikY', row_headers)
+    sales = row_values('매출액')[:len(years)]
+    sales_cost = row_values('매출원가')[:len(years)]
+    SGAs = row_values('판매비와관리비')[:len(years)]
+
+    sales = list(zip(years, sales))
+    sales_cost = list(zip(years, sales_cost))
+    SGAs = list(zip(years, SGAs))
+
+    print(sales)
+    print(sales_cost)
+    print(SGAs)
+    
+    return {
+        'sales': sales,
+        'sales_cost': sales_cost,
+        'SGAs': SGAs,
+    }
+
+
+def parse_fnguide_financial_statements(code: str) -> bool:
+    print('종목 {} FnGuide 재무재표 ...'.format(code))
+    url = FNGUIDE_FINANCIAL_STMT % (code)
+    print('FnGuide 재무재표 {}'.format(url))
+    tree = tree_from_url(url)
+    
+    stock = {'code': code, **parse_fnguide_financial_table(tree), **parse_fnguide_profit_table(tree)}
     db.save_stock(stock)
+    
     return True

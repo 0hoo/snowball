@@ -698,7 +698,6 @@ function lineChart(elementId, label, labels, data, color) {
                     {% endfor %}
                 </tbody>
             </table>
-
             <table class="ui table">
                 <thead>
                     <tr>
@@ -735,6 +734,28 @@ function lineChart(elementId, label, labels, data, color) {
                 </tbody>
             </table>
             {% endif %}
+            <table class="ui table">
+                <thead>
+                    <tr>
+                        <th>연도</th>
+                        <th>매출</th>
+                        <th>매출원가</th>
+                        <th>원가율</th>
+                        <th>판관비율</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sales, sales_cost, sales_cost_ratio, SGA_ratio in stock.sales_stat %}
+                    <tr>
+                        <td>{{sales.0}}</td>
+                        <td>{{sales.1}}</td>
+                        <td>{{sales_cost.1}}</td>
+                        <td>{{ '%.2f'|format(sales_cost_ratio.1) }}</td>
+                        <td>{{ '%.2f'|format(SGA_ratio.1) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
             <form class="ui form" action="{{ url_for('stock_my_price', code=stock.code) }}" method="post">
                 <div class="field">
                 <label>평균 단가</label>

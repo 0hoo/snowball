@@ -493,6 +493,18 @@ class Stock(UserDict):
     @property
     def relative_earning_rate(self):
         return self.get('relative_earning_rate', -100)
+
+    @property
+    def sales_cost_ratio(self):
+        return [(s[0], c[1] / s[1] * 100) for c, s in zip(self.get('sales_cost', []), self.get('sales', []))]
+
+    @property
+    def SGA_ratio(self):
+        return [(s[0], c[1] / s[1] * 100) for c, s in zip(self.get('SGAs', []), self.get('sales', []))]
+
+    @property
+    def sales_stat(self):
+        return zip(self.get('sales', []), self.get('sales_cost', []), self.sales_cost_ratio, self.SGA_ratio)
         
     def expected_rate_by_price(self, price: int) -> float:
         return self.calc_expected_rate(self.calc_future_bps, FUTURE, price=price)
