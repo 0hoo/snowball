@@ -25,6 +25,7 @@ NAVER_JSON1 = 'http://companyinfo.stock.naver.com/v1/company/cF4002.aspx?cmp_cd=
 NAVER = 'https://finance.naver.com/item/main.nhn?code='
 FNGUIDE = 'http://comp.fnguide.com/SVO2/ASP/SVD_main.asp?pGB=1&gicode=A'
 FNGUIDE_FINANCIAL_STMT = 'http://comp.fnguide.com/SVO2/ASP/SVD_Finance.asp?pGB=1&gicode=A%s&cID=&MenuYn=Y&ReportGB=&NewMenuID=103'
+FNGUIDE_FINANCIAL_RATIO = 'http://comp.fnguide.com/SVO2/ASP/SVD_FinanceRatio.asp?pGB=1&gicode=A%s&cID=&MenuYn=Y&ReportGB=&NewMenuID=104'
 
 LAST_YEAR = str(datetime.now().year - 1)
 
@@ -192,6 +193,7 @@ def parse_snowball(code: str):
 
     if parse_fnguide(code):
         parse_fnguide_financial_statements(code)
+        parse_fnguide_financial_ratio(code)
     else:
         print('FnGuide 수집실패')
         if not parse_naver_company(code):
@@ -427,15 +429,17 @@ def parse_fnguide(code: str):
     return True
 
 
-def row_values_table(tree, table_id: str, row_headers: List[str], key: str) -> List[str]:
+def row_values_table(table, row_headers: List[str], key: str) -> List[str]:
     try:
         i = row_headers.index(key)
-        return [parse_int(v) for v in tree.xpath("//*[@id='" + table_id + "']/table/tbody/tr")[i].xpath('td/text()')]
+        return [parse_float(v) for v in table.xpath('tbody/tr')[i].xpath('td//text()')]
     except ValueError:
         return []
 
 
 def parse_fnguide_financial_table(tree) -> dict:
+    if not tree.xpath('//*[@id="divDaechaY"]'):
+        return {}
     years = tree.xpath('//*[@id="divDaechaY"]/table/thead/tr/th/text()')
     years = [int(y.split('/')[0]) for y in years[1:]]
 
@@ -443,7 +447,7 @@ def parse_fnguide_financial_table(tree) -> dict:
     row_headers = [h.strip() for h in row_headers if h.strip()]
     row_headers = [h.replace('\xa0', '') for h in row_headers if h != '계산에 참여한 계정 펼치기']
 
-    row_values = partial(row_values_table, tree, 'divDaechaY', row_headers)
+    row_values = partial(row_values_table, tree.xpath("//*[@id='divDaechaY']/table")[0], row_headers)
     current_assets = row_values('유동자산')
     current_liability = row_values('유동부채')
     total_liability = row_values('부채')
@@ -468,6 +472,8 @@ def parse_fnguide_financial_table(tree) -> dict:
 
 
 def parse_fnguide_profit_table(tree) -> dict:
+    if not tree.xpath('//*[@id="divSonikY"]'):
+        return {}
     years = tree.xpath('//*[@id="divSonikY"]/table/thead/tr/th/text()')
     years = [int(y.split('/')[0]) for y in years if len(y.split('/')) > 1]
 
@@ -475,7 +481,7 @@ def parse_fnguide_profit_table(tree) -> dict:
     row_headers = [h.strip() for h in row_headers if h.strip()]
     row_headers = [h.replace('\xa0', '') for h in row_headers if h != '계산에 참여한 계정 펼치기']
 
-    row_values = partial(row_values_table, tree, 'divSonikY', row_headers)
+    row_values = partial(row_values_table, tree.xpath("//*[@id='divSonikY']/table")[0], row_headers)
     sales = row_values('매출액')[:len(years)]
     sales_cost = row_values('매출원가')[:len(years)]
     SGAs = row_values('판매비와관리비')[:len(years)]
@@ -504,4 +510,52 @@ def parse_fnguide_financial_statements(code: str) -> bool:
     stock = {'code': code, **parse_fnguide_financial_table(tree), **parse_fnguide_profit_table(tree)}
     db.save_stock(stock)
     
+    return True
+
+
+def parse_fnguide_financial_ratio(code: str) -> bool:
+    print('종목 {} FnGuide 재무비율 ...'.format(code))
+    url = FNGUIDE_FINANCIAL_RATIO % (code)
+    print('FnGuide 재무비율 {}'.format(url))
+    tree = tree_from_url(url)
+
+    if not tree.xpath('//*[@id="compBody"]/div[2]/div[3]/div[2]/table'):
+        return False
+    
+    years = tree.xpath('//*[@id="compBody"]/div[2]/div[3]/div[2]/table/thead/tr/th/text()')
+    years = [int(y.split('/')[0]) for y in years if len(y.split('/')) > 1]
+
+    header1 = '//*[@id="compBody"]/div[2]/div[3]/div[2]/table/tbody/tr/th/text()'
+    header2 = '//*[@id="compBody"]/div[2]/div[3]/div[2]/table/tbody/tr/th//a//text()' 
+    header3 = '//*[@id="compBody"]/div[2]/div[3]/div[2]/table/tbody/tr/th/div/text()'
+    row_headers = tree.xpath(' | '.join([header1, header2, header3]))
+    row_headers = [h.strip() for h in row_headers if h.strip()]
+    row_headers = [h.replace('\xa0', '') for h in row_headers if h != '계산에 참여한 계정 펼치기']
+
+    row_values = partial(row_values_table, tree.xpath('//*[@id="compBody"]/div[2]/div[3]/div[2]/table')[0], row_headers)
+    loan_rate =  list(zip(years, row_values('순차입금비율')[:len(years)]))
+    interest_cost = list(zip(years, row_values('이자비용')[:len(years)]))
+    interest_coverage = list(zip(years, row_values('이자보상배율')[:len(years)]))
+    ROICs = list(zip(years, row_values('ROIC')[:len(years)]))
+    NOPATs = list(zip(years, row_values('세후영업이익')[:len(years)]))
+    ICs = list(zip(years, row_values('영업투하자본')[:len(years)]))
+
+    total_asset_turnover = list(zip(years, row_values('총자산회전율')[:len(years)]))
+    net_working_capital_turnover = list(zip(years, row_values('순운전자본회전율')[:len(years)]))
+    net_working_capital = list(zip(years, row_values('순운전자본')[:len(years)]))
+
+    stock = {
+        'code': code,
+        'loan_rate': loan_rate,
+        'interest_cost': interest_cost,
+        'interest_coverage': interest_coverage,
+        'ROICs': ROICs,
+        'NOPATs': NOPATs,
+        'ICs': ICs,
+        'total_asset_turnover': total_asset_turnover,
+        'net_working_capital_turnover': net_working_capital_turnover,
+        'net_working_capital': net_working_capital,
+    }
+    db.save_stock(stock)
+
     return True
