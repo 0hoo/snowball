@@ -13,7 +13,7 @@ from collections import UserDict, namedtuple
 from pymongo import MongoClient, ASCENDING, DESCENDING
 from bson.objectid import ObjectId
 
-from utils import attr_or_key_getter
+from utils import attr_or_key_getter, first_or_none
 
 
 FScore = namedtuple('FScore', ['total_issued_stock', 'profitable', 'cfo'])
@@ -51,6 +51,7 @@ available_rank_options = [
     RankOption(key='rank_month6', title='6개월', asc=False, is_rankoption=True),
     RankOption(key='rank_month12', title='12개월', asc=False, is_rankoption=True),
     RankOption(key='rank_relative_earning_rate', title='상대수익률', asc=False, is_rankoption=True),
+    RankOption(key='rank_roic', title='ROIC', asc=False, is_rankoption=True),
 ]
 
 
@@ -427,7 +428,14 @@ class Stock(UserDict):
 
     @property
     def current_ratio(self):
-        return [(c[0][0], c[0][1] / c[1][1] * 100) for c in zip(self.current_assets, self.current_liability)]
+        return [(c[0][0], (c[0][1] / c[1][1] if c[1][1] != 0 else 0) * 100) for c in zip(self.current_assets, self.current_liability)]
+
+    @property
+    def current_ratio_last_year(self):
+        if not self.current_ratio:
+            return 0
+        last_year = [c[1] for c in self.current_ratio if c[0] == LAST_YEAR]
+        return last_year[0] if last_year else 0
 
     @property
     def current_ratio_stat(self):
@@ -510,6 +518,27 @@ class Stock(UserDict):
     @property
     def sales_stat(self):
         return zip(self.get('sales', []), self.get('sales_cost', []), self.sales_cost_ratio, self.SGA_ratio)
+
+    @property
+    def loan_stat(self):
+        return zip(self.get('loan_rate', []), self.get('interest_cost', []), self.get('interest_coverage', []))
+
+    @property
+    def mean_ROIC(self):
+        values = [v[1] for v in self.get('ROICs', []) if v[1] > 0]
+        return mean(values) if values else 0
+
+    def IC(self, year):
+        return first_or_none([v[1]for v in self.get('ICs', []) if v[0] == year])
+
+    def NOPAT(self, year):
+        return first_or_none([v[1]for v in self.get('NOPATs', []) if v[0] == year])
+
+    def total_asset_turnover_by(self, year):
+        return first_or_none([v[1]for v in self.get('total_asset_turnover', []) if v[0] == year])
+
+    def net_working_capital_by(self, year):
+        return first_or_none([v[1]for v in self.get('net_working_capital', []) if v[0] == year])
         
     def expected_rate_by_price(self, price: int) -> float:
         return self.calc_expected_rate(self.calc_future_bps, FUTURE, price=price)
@@ -659,6 +688,8 @@ def update_ranks():
     update_rank_by(stocks, 'month12', 'rank_month3', reverse=True)
     update_rank_by(stocks, 'relative_earning_rate', 'rank_relative_earning_rate', reverse=True)
     update_rank_by(stocks, 'NCAV_ratio', 'rank_ncav', reverse=True)
+    update_rank_by(stocks, 'mean_ROIC', 'rank_roic', reverse=True)
+    update_rank_by(stocks, 'current_ratio_last_year', 'rank_current_ratio', reverse=True)
 
 
 def all_stocks(order_by='title', ordering='asc', find=None, filter_by_expected_rate=True, filter_bad=True, filter_options=[], rank_options=[]) -> List[Stock]:

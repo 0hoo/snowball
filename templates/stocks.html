@@ -162,11 +162,11 @@ $(document).ready(function(){
                         <a href="{{ url_for('stocks', status=status, alt=alt) }}?order_by=title&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">종목명</a>
                         {% if order_by == 'title' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
                     </th>
-                    <th>
-                        <a href="{{ url_for('stocks', status=status, alt=alt) }}?order_by=current_price&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">현재가</a>
-                        {% if order_by == 'current_price' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
-                    </th>
                     {% if not alt %}
+                        <th>
+                            <a href="{{ url_for('stocks', status=status, alt=alt) }}?order_by=current_price&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">현재가</a>
+                            {% if order_by == 'current_price' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                        </th>    
                         {% if not current_filter.rank_options %}
                         <th>
                             변동
@@ -261,10 +261,15 @@ $(document).ready(function(){
                             {% if order_by == 'rank_ncav' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}                            
                         </th>
                         <th>
-                            기대
+                            <a href="{{ url_for('stocks', status=status, alt=alt) }}?order_by=mean_ROIC&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">ROIC</a>
+                            {% if order_by == 'mean_ROIC' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}                                
                         </th>
                         <th>
-                            저P기
+                            <a href="{{ url_for('stocks', status=status, alt=alt) }}?order_by=current_ratio_last_year&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">유동비</a>
+                            {% if order_by == 'current_ratio_last_year' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}                                    
+                        </th>
+                        <th>
+                            기대
                         </th>
                     {% endif %}
                     <th>
@@ -283,8 +288,8 @@ $(document).ready(function(){
                     <td>
                         <a href="{{ url_for('stock', code=stock.code) }}">{{ stock.title }}</a>
                     </td>
-                    <td class="{{ stock.price_color }}">{{ stock.price_arrow }} {{ stock.current_price|round|int }}</td>
                     {% if not alt %}
+                        <td class="{{ stock.price_color }}">{{ stock.price_arrow }} {{ stock.current_price|round|int }}</td>
                         {% if not current_filter.rank_options %}
                         <td class="{{ stock.price_color }}">{{ stock.price_sign }}{{ '%.2f'|format(stock.rate_diff) }}%</td>
                         {% endif %}
@@ -337,13 +342,14 @@ $(document).ready(function(){
                         <td>{{ stock.rank_floating_rate }}</td>
                         <td>
                             {% if stock.NCAV_ratio != 0 %}
-                            {{ stock.rank_ncav }} ({{ '%.0f'|format(stock.NCAV_ratio) }})
+                            {{ '%.0f'|format(stock.NCAV_ratio) }}
                             {% else %}
                             N/A
                             {% endif %}                            
                         </td>
-                        <td>{% if stock.calculable %} {{ '%.2f'|format(stock.expected_rate or 0) }} {% endif %}</td>
-                        <td>{% if stock.calculable %} {{ '%.2f'|format(stock.expected_rate_by_low_pbr or 0) }} {% endif %}</td>
+                        <td>{% if stock.mean_ROIC == 0 %}N/A{% else %}{{ '%0.f'|format(stock.mean_ROIC) }}{% endif %}</td>
+                        <td>{{ '%.0f'|format(stock.current_ratio_last_year) }}</td>
+                        <td>{% if stock.calculable %} {{ '%.1f'|format(stock.expected_rate or 0) }} {% endif %}</td>
                     {% endif %}
                     <td>
                         {% if stock.owned %}

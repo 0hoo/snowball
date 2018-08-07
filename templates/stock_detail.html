@@ -416,6 +416,23 @@ function lineChart(elementId, label, labels, data, color) {
                     </td>
                 </tr>
                 <tr>
+                    <td>평균ROIC
+                        {% if stock.mean_ROIC > 0 %}
+                        <div class="ui label">{{ stock.rank_roic }}위</div>
+                        {% endif %}    
+                    </td>
+                    <td>{{ '%.2f'|format(stock.mean_ROIC) }}</td>
+                </tr>
+                <tr>
+                    <td>
+                        유동비율
+                        {% if stock.current_ratio_last_year > 0 %}
+                        <div class="ui label">{{ stock.rank_current_ratio }}위</div>
+                        {% endif %}
+                    </td>
+                    <td>{{ '%.2f'|format(stock.current_ratio_last_year) }}</td>
+                </tr>
+                <tr>
                     <td>우선주</td>
                     <td>{% if stock.has_preferred_stock %}있음{% else %}없음{% endif %}</td>
                 </tr>
@@ -712,10 +729,10 @@ function lineChart(elementId, label, labels, data, color) {
                     {% for current_asset, current_liability, current_ratio, total_liability in stock.current_ratio_stat %}
                     <tr>
                         <td>{{current_asset.0}}</td>
-                        <td>{{current_asset.1}}</td>
-                        <td>{{current_liability.1}}</td>
+                        <td>{{current_asset.1|int}}</td>
+                        <td>{{current_liability.1|int}}</td>
                         <td>{{ '%.2f'|format(current_ratio.1) }}</td>
-                        <td>{{total_liability.1}}</td>
+                        <td>{{total_liability.1|int}}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -738,6 +755,26 @@ function lineChart(elementId, label, labels, data, color) {
                 <thead>
                     <tr>
                         <th>연도</th>
+                        <th>순차입금비율</th>
+                        <th>이자비용</th>
+                        <th>이자보상배율</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for loan_rate, interest_cost, interest_coverage in stock.loan_stat %}
+                    <tr>
+                        <td>{{loan_rate.0}}</td>
+                        <td>{{ '%.2f'|format(loan_rate.1) }}</td>
+                        <td>{{interest_cost.1}}</td>
+                        <td>{{ '%.2f'|format(interest_coverage.1) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <table class="ui table">
+                <thead>
+                    <tr>
+                        <th>연도</th>
                         <th>매출</th>
                         <th>매출원가</th>
                         <th>원가율</th>
@@ -747,11 +784,51 @@ function lineChart(elementId, label, labels, data, color) {
                 <tbody>
                     {% for sales, sales_cost, sales_cost_ratio, SGA_ratio in stock.sales_stat %}
                     <tr>
-                        <td>{{sales.0}}</td>
-                        <td>{{sales.1}}</td>
-                        <td>{{sales_cost.1}}</td>
+                        <td>{{sales.0|int}}</td>
+                        <td>{{sales.1|int}}</td>
+                        <td>{{sales_cost.1|int}}</td>
                         <td>{{ '%.2f'|format(sales_cost_ratio.1) }}</td>
                         <td>{{ '%.2f'|format(SGA_ratio.1) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <table class="ui table">
+                <thead>
+                    <tr>
+                        <th>연도</th>
+                        <th>세후순영익</th>
+                        <th>영업투하자본</th>
+                        <th>ROIC</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ROIC in stock.ROICs %}
+                    <tr>
+                        <td>{{ROIC.0|int}}</td>
+                        <td>{{stock.NOPAT(ROIC.0)|int}}</td>
+                        <td>{{stock.IC(ROIC.0)|int}}</td>
+                        <td>{{ '%.2f'|format(ROIC.1) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <table class="ui table">
+                <thead>
+                    <tr>
+                        <th>연도</th>
+                        <th>총자산회전율</th>
+                        <th>순운전자본</th>
+                        <th>순운전회전율</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for net_working_capital_turnover in stock.net_working_capital_turnover %}
+                    <tr>
+                        <td>{{net_working_capital_turnover.0|int}}</td>
+                        <td>{{ '%.2f'|format(stock.total_asset_turnover_by(net_working_capital_turnover.0)) }}
+                        <td>{{stock.net_working_capital_by(net_working_capital_turnover.0)|int}}</td>
+                        <td>{{ '%.2f'|format(net_working_capital_turnover.1) }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
