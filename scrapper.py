@@ -152,7 +152,6 @@ def parse_quarterly(code: str):
         'QBPSs': QBPSs,
     }
     stock = db.save_stock(stock)
-    stock.save_record()
 
 
 def parse_naver_company(code: str):
@@ -271,7 +270,6 @@ def parse_snowball(code: str):
         'CAPEXs': CAPEXs,
     }
     stock = db.save_stock(stock)
-    stock.save_record()
 
     parse_quarterly(code)
     parse_json(code)
