@@ -578,6 +578,30 @@ function lineChart(elementId, label, labels, data, color) {
                     {% endfor %}
                 </tbody>
             </table>
+            <table class="ui table">
+                <thead>
+                    <tr>
+                        <th>연도</th>
+                        <th>PCR</th>
+                        <th>PSR</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pcr, psr in stock.PCR_stat %}
+                    <tr>
+                        <td>
+                            {{pcr.0}}
+                        </td>
+                        <td>
+                            {% if pcr.1 %}{{ '%.2f'|format(pcr.1) }}{% endif %}
+                        </td>
+                        <td>
+                            {% if psr.1 %}{{ '%.2f'|format(psr.1) }}{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
         <div class="column">
             <form class="ui form" action="{{ url_for('stock_expected_rate_by_price', code=stock.code) }}" method="get">

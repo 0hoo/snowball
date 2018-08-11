@@ -376,6 +376,10 @@ class Stock(UserDict):
         return zip(self.year_stat('CFOs'), self.year_stat('CFIs'), self.year_stat('CFFs'), self.year_stat('FCFs'))
 
     @property
+    def PCR_stat(self):
+        return zip(self.get('PCRs', []), self.get('PSRs', []))
+
+    @property
     def is_five_years_record_low(self):
         return self.low_pbr > self.pbr
 

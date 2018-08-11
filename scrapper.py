@@ -22,6 +22,7 @@ NAVER_COMPANY = 'http://companyinfo.stock.naver.com/v1/company/c1010001.aspx?cmp
 NAVER_YEARLY = "http://companyinfo.stock.naver.com/v1/company/ajax/cF1001.aspx?cmp_cd=%s&fin_typ=0&freq_typ=Y"
 NAVER_QUARTERLY = "http://companyinfo.stock.naver.com/v1/company/ajax/cF1001.aspx?cmp_cd=%s&fin_typ=0&freq_typ=Q"
 NAVER_JSON1 = 'http://companyinfo.stock.naver.com/v1/company/cF4002.aspx?cmp_cd=%s&frq=0&rpt=1&finGubun=MAIN&frqTyp=0&cn='
+NAVER_JSON5 = 'http://companyinfo.stock.naver.com/v1/company/cF4002.aspx?cmp_cd=%s&frq=0&rpt=5&finGubun=MAIN&frqTyp=0&cn='
 NAVER = 'https://finance.naver.com/item/main.nhn?code='
 FNGUIDE = 'http://comp.fnguide.com/SVO2/ASP/SVD_main.asp?pGB=1&gicode=A'
 FNGUIDE_FINANCIAL_STMT = 'http://comp.fnguide.com/SVO2/ASP/SVD_Finance.asp?pGB=1&gicode=A%s&cID=&MenuYn=Y&ReportGB=&NewMenuID=103'
@@ -304,9 +305,37 @@ def parse_json(code: str):
             if 'ACC_NM' in row and row['ACC_NM'].startswith('매출총이익＜당기'):
                 GPs = [(y, row['DATA' + str(year_data_keys[y])]) for y in sorted(list(year_data_keys.keys()))]
                 break
+    
+    url = NAVER_JSON5 % (code)
+    urlopen = urllib.request.urlopen(url)
+    data = json.loads(urlopen.read().decode())
+    
+    CPSs = []
+    PCRs = []
+    SPSs = []
+    PSRs = []
+    if data and 'DATA' in data and data['DATA']:
+        yyyy = [int(y[:4]) for y in data['YYMM'] if len(y) > 4 and len(y.split('/')) > 2]
+        year_data_keys = {y: i+1 for i, y in enumerate(yyyy)}
+    
+        for row in data['DATA']:
+            if 'ACC_NM' in row and row['ACC_NM'].startswith('CPS'):
+                CPSs = [(y, row['DATA' + str(year_data_keys[y])]) for y in sorted(list(year_data_keys.keys()))]
+            elif 'ACC_NM' in row and row['ACC_NM'].startswith('PCR'):
+                PCRs = [(y, row['DATA' + str(year_data_keys[y])]) for y in sorted(list(year_data_keys.keys()))]
+            elif 'ACC_NM' in row and row['ACC_NM'].startswith('SPS'):
+                SPSs = [(y, row['DATA' + str(year_data_keys[y])]) for y in sorted(list(year_data_keys.keys()))]
+            elif 'ACC_NM' in row and row['ACC_NM'].startswith('PSR'):
+                PSRs = [(y, row['DATA' + str(year_data_keys[y])]) for y in sorted(list(year_data_keys.keys()))]
+                
+    
     stock = {
         'code': code,
-        'GPs': GPs
+        'GPs': GPs,
+        'CPSs': CPSs,
+        'PCRs': PCRs,
+        'SPSs': SPSs,
+        'PSRs': PSRs,
     }
     print('GPs: {}'.format(GPs))
     stock = db.save_stock(stock)
