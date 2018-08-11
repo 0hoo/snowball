@@ -614,35 +614,6 @@ class Stock(UserDict):
             return [(year(idx), value) for idx, value in enumerate(stats) 
                 if not exclude_future or year(idx) <= LAST_YEAR]
 
-    def save_record(self):
-        starred = self.get('starred', False)
-        owned = self.get('owned', False)
-        today = datetime.today()
-        today = today.replace(hour=0, minute=0, second=0, microsecond=0)
-        if not starred and not owned:
-            return
-        record = {
-            'date': today,
-            'buy': 0,
-            'sell': 0,
-            'bps': self.get('bps', 0),
-            'current_price': self.current_price,
-            'future_roe': self.future_roe,
-            'roe': self.get('roe', 0),
-            'pbr': self.get('pbr', 0),
-            'expected_rate': self.expected_rate,
-        }
-        records = self.get('records', [])
-        print('records', records)
-        if len(records) > 0 and records[-1]['date'] == today:
-           records[-1] = record
-        else:
-           records.append(record)
-        save_stock({
-            'code': self.get('code'),
-            'records': records,
-        })
-
     def __str__(self) -> str:
         return '{} : {}'.format(self['title'], self['code'])
 
