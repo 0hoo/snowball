@@ -372,6 +372,10 @@ class Stock(UserDict):
         return zip(self.year_stat('BPSs'), self.year_stat('DEPTs'), self.year_stat('CAPEXs'))
 
     @property
+    def FCF_stat(self):
+        return zip(self.year_stat('CFOs'), self.year_stat('CFIs'), self.year_stat('CFFs'), self.year_stat('FCFs'))
+
+    @property
     def is_five_years_record_low(self):
         return self.low_pbr > self.pbr
 
