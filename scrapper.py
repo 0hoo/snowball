@@ -217,9 +217,6 @@ def parse_snowball(code: str):
     if len(ROEs) == 0:
         print('*** ROE 정보가 없음 >>>')
         return
-
-    CAPEXs = tree.xpath('/html/body/table/tbody/tr[17]/td/span/text()')
-    CAPEXs = [parse_float(x) for x in CAPEXs]
     
     ROEs = [float_or_none(x) for x in ROEs]
 
@@ -249,6 +246,21 @@ def parse_snowball(code: str):
     #영업활동현금흐름
     CFOs = tree.xpath('/html/body/table/tbody/tr[14]/td/span/text()')
     CFOs = [parse_int(x) for x in CFOs]
+
+    #투자활동현금흐름
+    CFIs = tree.xpath('/html/body/table/tbody/tr[15]/td/span/text()')
+    CFIs = [parse_int(x) for x in CFIs]
+
+    #투자활동현금흐름
+    CFFs = tree.xpath('/html/body/table/tbody/tr[16]/td/span/text()')
+    CFFs = [parse_int(x) for x in CFFs]
+
+    CAPEXs = tree.xpath('/html/body/table/tbody/tr[17]/td/span/text()')
+    CAPEXs = [parse_float(x) for x in CAPEXs]
+
+    #잉여현금흐름
+    FCFs = tree.xpath('/html/body/table/tbody/tr[18]/td/span/text()')
+    FCFs = [parse_int(x) for x in FCFs]
     
     #발행주식수
     TIs = tree.xpath('/html/body/table/tbody/tr[33]/td/span/text()')
@@ -263,6 +275,9 @@ def parse_snowball(code: str):
         'TAs': TAs,
         'NPs': NPs,
         'CFOs': CFOs,
+        'CFIs': CFIs,
+        'CFFs': CFFs,
+        'FCFs': FCFs,
         'PERs': PERs,
         'TIs': TIs,
         'DEPTs': DEPTs,

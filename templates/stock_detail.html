@@ -545,6 +545,39 @@ function lineChart(elementId, label, labels, data, color) {
                 </tbody>
             </table>
             {% endif %}
+            <div class="ui divider"></div>
+            <table class="ui table">
+                <thead>
+                    <tr>
+                        <th>현금흐름</th>
+                        <th>영업</th>
+                        <th>투자</th>
+                        <th>재무</th>
+                        <th>FCF</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cfo, cfi, cff, fcf in stock.FCF_stat %}
+                    <tr>
+                        <td>
+                            {{cfo.0}}
+                        </td>
+                        <td>
+                            {{cfo.1}}
+                        </td>
+                        <td>
+                            {{cfi.1}}
+                        </td>
+                        <td>
+                            {{cff.1}}
+                        </td>
+                        <td>
+                            {{fcf.1}}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
         <div class="column">
             <form class="ui form" action="{{ url_for('stock_expected_rate_by_price', code=stock.code) }}" method="get">
