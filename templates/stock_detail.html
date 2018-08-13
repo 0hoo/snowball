@@ -749,25 +749,29 @@ function lineChart(elementId, label, labels, data, color) {
                     <tr>
                         <th>연도</th>
                         <th>BPS</th>
-                        <th>부채비율</th>
+                        <th>부채%</th>
                         <th>CAPEX</th>
+                        <th>순운전</th>
+                        <th>회전</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for bps, dept, capex in stock.other_year_stat %}
+                    {% for year, capex in stock.year_stat('CAPEXs') %}
                     <tr>
-                        <td {% if loop.index0 == stock.last_year_index %}class="positive"{% endif %}>
-                            {{bps.0}}
+                        <td>
+                            {{year}}
                         </td>
                         <td>
-                            {{bps.1}}
+                            {{stock.value_by_year('BPSs', year)}}
                         </td>
                         <td>
-                            {{dept.1}}
+                            {{stock.value_by_year('DEPTs', year)}}
                         </td>
                         <td>
-                            {{capex.1|int}}
+                            {{capex|int}}
                         </td>
+                        <td>{{stock.value_by_year('net_working_capital', year)|int or 'N/A'}}</td>
+                        <td>{{ '%.2f'|format(stock.value_by_year('net_working_capital_turnover', year) or 0) }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -818,18 +822,18 @@ function lineChart(elementId, label, labels, data, color) {
                     </tr>
                 </thead>
                 <tbody>
-                    {% for loan_rate, net_current_loan, interest_cost, interest_coverage in stock.loan_stat %}
+                    {% for year, interest_coverage in stock.interest_coverage %}
                     <tr>
-                        <td>{{loan_rate.0}}</td>
+                        <td>{{year}}</td>
                         <td>
-                            {% if loan_rate.1 == 0 %}
-                            N/A ({{ net_current_loan.1|int }})
+                            {% if stock.value_by_year('loan_rate', year) == 0 %}
+                            N/A ({{ stock.value_by_year('net_current_loan', year)|int }})
                             {% else %}
-                            {{ '%.2f'|format(loan_rate.1) }}
+                            {{ '%.2f'|format(stock.value_by_year('loan_rate', year)) }}
                             {% endif %}
                         </td>
-                        <td>{{interest_cost.1}}</td>
-                        <td>{{ '%.2f'|format(interest_coverage.1) }}</td>
+                        <td>{{stock.value_by_year('interest_cost', year)}}</td>
+                        <td>{{ '%.2f'|format(interest_coverage) }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -845,13 +849,13 @@ function lineChart(elementId, label, labels, data, color) {
                     </tr>
                 </thead>
                 <tbody>
-                    {% for sales, sales_cost, sales_cost_ratio, SGA_ratio in stock.sales_stat %}
+                    {% for year, SGA_ratio in stock.SGA_ratio %}
                     <tr>
-                        <td>{{sales.0|int}}</td>
-                        <td>{{sales.1|int}}</td>
-                        <td>{{sales_cost.1|int}}</td>
-                        <td>{{ '%.2f'|format(sales_cost_ratio.1) }}</td>
-                        <td>{{ '%.2f'|format(SGA_ratio.1) }}</td>
+                        <td>{{SGA_ratio|int}}</td>
+                        <td>{{stock.value_by_year('sales', year)|int}}</td>
+                        <td>{{stock.value_by_year('sales_cost', year)|int}}</td>
+                        <td>{{ '%.2f'|format(stock.value_by_year('sales_cost_ratio', year) or 0) }}</td>
+                        <td>{{ '%.2f'|format(SGA_ratio) }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -866,32 +870,12 @@ function lineChart(elementId, label, labels, data, color) {
                     </tr>
                 </thead>
                 <tbody>
-                    {% for ROIC in stock.ROICs %}
+                    {% for year, ROIC in stock.ROICs %}
                     <tr>
-                        <td>{{ROIC.0|int}}</td>
-                        <td>{{stock.NOPAT(ROIC.0)|int}}</td>
-                        <td>{{stock.IC(ROIC.0)|int}}</td>
-                        <td>{{ '%.2f'|format(ROIC.1) }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            <table class="ui table">
-                <thead>
-                    <tr>
-                        <th>연도</th>
-                        <th>총자산회전율</th>
-                        <th>순운전자본</th>
-                        <th>순운전회전율</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for net_working_capital_turnover in stock.net_working_capital_turnover %}
-                    <tr>
-                        <td>{{net_working_capital_turnover.0|int}}</td>
-                        <td>{{ '%.2f'|format(stock.total_asset_turnover_by(net_working_capital_turnover.0)) }}
-                        <td>{{stock.net_working_capital_by(net_working_capital_turnover.0)|int}}</td>
-                        <td>{{ '%.2f'|format(net_working_capital_turnover.1) }}</td>
+                        <td>{{year}}</td>
+                        <td>{{stock.value_by_year('NOPATs', year)|int}}</td>
+                        <td>{{stock.value_by_year('ICs', year)|int}}</td>
+                        <td>{{ '%.2f'|format(ROIC) }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
