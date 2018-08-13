@@ -375,9 +375,17 @@ class Stock(UserDict):
     def future_bps(self) -> int:
         return self.calc_future_bps(FUTURE)
 
+    # @property
+    # def other_year_stat(self):
+    #     return zip(self.year_stat('BPSs'), self.year_stat('DEPTs'), self.year_stat('CAPEXs'))
+
     @property
-    def other_year_stat(self):
-        return zip(self.year_stat('BPSs'), self.year_stat('DEPTs'), self.year_stat('CAPEXs'))
+    def BPSs(self):
+        return self.year_stat('BPSs')
+
+    @property
+    def DEPTs(self):
+        return self.year_stat('DEPTs')
 
     @property
     def FCF_stat(self):
@@ -545,23 +553,12 @@ class Stock(UserDict):
         return [(s[0], c[1] / s[1] * 100) for c, s in zip(self.get('SGAs', []), self.get('sales', []))]
 
     @property
-    def sales_stat(self):
-        return zip(self.get('sales', []), self.get('sales_cost', []), self.sales_cost_ratio, self.SGA_ratio)
-
-    @property
-    def loan_stat(self):
-        return zip(self.get('loan_rate', []), self.get('net_current_loan'), self.get('interest_cost', []), self.get('interest_coverage', []))
-
-    @property
     def mean_ROIC(self):
         values = [v[1] for v in self.get('ROICs', []) if v[1] > 0]
         return mean(values) if values else 0
 
-    def IC(self, year):
-        return first_or_none([v[1]for v in self.get('ICs', []) if v[0] == year])
-
-    def NOPAT(self, year):
-        return first_or_none([v[1]for v in self.get('NOPATs', []) if v[0] == year])
+    def value_by_year(self, key, year):
+        return first_or_none([v[1]for v in attr_or_key_getter(key, self, []) if v[0] == year])
 
     def total_asset_turnover_by(self, year):
         return first_or_none([v[1]for v in self.get('total_asset_turnover', []) if v[0] == year])
