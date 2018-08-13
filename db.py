@@ -63,6 +63,8 @@ available_filter_options = [
     FilterOption(key='expected_rate_by_low_pbr', title='저P기대수익률', morethan=None, value=None, is_boolean=False),
     FilterOption(key='pbr', title='PBR', morethan=None, value=None, is_boolean=False),
     FilterOption(key='per', title='PER', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='last_year_pcr', title='PCR', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='last_year_psr', title='PSR', morethan=None, value=None, is_boolean=False),
     FilterOption(key='dividend_rate', title='배당률', morethan=None, value=None, is_boolean=False),
     FilterOption(key='beta', title='베타', morethan=None, value=None, is_boolean=False),
     FilterOption(key='foreigner_weight', title='외국인비중', morethan=None, value=None, is_boolean=False),
@@ -76,6 +78,7 @@ available_filter_options = [
     FilterOption(key='roe_max_diff', title='ROE최대최소차', morethan=None, value=None, is_boolean=False),
     FilterOption(key='last_four_years_roe_max_diff', title='최근4년ROE최대최소차', morethan=None, value=None, is_boolean=False),
     FilterOption(key='calculable_pbr_count', title='계산가능PBR수', morethan=None, value=None, is_boolean=False),
+    FilterOption(key='FCF_surplus_years', title='FCF흑자연수', morethan=None, value=None, is_boolean=False),
     FilterOption(key='rank_last_year_gpa', title='GPA순위', morethan=None, value=None, is_boolean=False),
     FilterOption(key='agg_rank', title='시총순위', morethan=None, value=None, is_boolean=False),
     FilterOption(key='rank_beta', title='저베타순위', morethan=None, value=None, is_boolean=False),
@@ -381,6 +384,10 @@ class Stock(UserDict):
         return zip(self.year_stat('CFOs'), self.year_stat('CFIs'), self.year_stat('CFFs'), self.year_stat('FCFs'))
 
     @property
+    def FCF_surplus_years(self):
+        return len([v for v in self.year_stat('FCFs', exclude_future=True) if v[1] > 0])
+
+    @property
     def PCR_stat(self):
         return zip(self.get('PCRs', []), self.get('PSRs', []))
 
@@ -488,6 +495,20 @@ class Stock(UserDict):
         return v[0]
 
     @property
+    def last_year_pcr(self):
+        v = [pcr[1] for pcr in self.get('PCRs', []) if pcr[0] == LAST_YEAR]
+        if not v or not v[0]:
+            return 0
+        return v[0]
+
+    @property
+    def last_year_psr(self):
+        v = [psr[1] for psr in self.get('PSRs', []) if psr[0] == LAST_YEAR]
+        if not v or not v[0]:
+            return 0
+        return v[0]
+
+    @property
     def agg_rank(self):
         return self.get('agg_rank')
 
@@ -529,7 +550,7 @@ class Stock(UserDict):
 
     @property
     def loan_stat(self):
-        return zip(self.get('loan_rate', []), self.get('interest_cost', []), self.get('interest_coverage', []))
+        return zip(self.get('loan_rate', []), self.get('net_current_loan'), self.get('interest_cost', []), self.get('interest_coverage', []))
 
     @property
     def mean_ROIC(self):
@@ -669,6 +690,8 @@ def update_ranks():
     update_rank_by(stocks, 'NCAV_ratio', 'rank_ncav', reverse=True)
     update_rank_by(stocks, 'mean_ROIC', 'rank_roic', reverse=True)
     update_rank_by(stocks, 'current_ratio_last_year', 'rank_current_ratio', reverse=True)
+    update_rank_by(stocks, 'last_year_pcr', 'rank_last_year_pcr', reverse=False)
+    update_rank_by(stocks, 'last_year_psr', 'rank_last_year_psr', reverse=False)
 
 
 def all_stocks(order_by='title', ordering='asc', find=None, filter_by_expected_rate=True, filter_bad=True, filter_options=[], rank_options=[]) -> List[Stock]:

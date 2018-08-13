@@ -576,6 +576,7 @@ def parse_fnguide_financial_ratio(code: str) -> bool:
 
     row_values = partial(row_values_table, tree.xpath('//*[@id="compBody"]/div[2]/div[3]/div[2]/table')[0], row_headers)
     loan_rate =  list(zip(years, row_values('순차입금비율')[:len(years)]))
+    net_current_loan =  list(zip(years, row_values('순차입부채')[:len(years)]))
     interest_cost = list(zip(years, row_values('이자비용')[:len(years)]))
     interest_coverage = list(zip(years, row_values('이자보상배율')[:len(years)]))
     ROICs = list(zip(years, row_values('ROIC')[:len(years)]))
@@ -589,6 +590,7 @@ def parse_fnguide_financial_ratio(code: str) -> bool:
     stock = {
         'code': code,
         'loan_rate': loan_rate,
+        'net_current_loan': net_current_loan,
         'interest_cost': interest_cost,
         'interest_coverage': interest_coverage,
         'ROICs': ROICs,
