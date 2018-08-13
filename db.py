@@ -375,10 +375,6 @@ class Stock(UserDict):
     def future_bps(self) -> int:
         return self.calc_future_bps(FUTURE)
 
-    # @property
-    # def other_year_stat(self):
-    #     return zip(self.year_stat('BPSs'), self.year_stat('DEPTs'), self.year_stat('CAPEXs'))
-
     @property
     def BPSs(self):
         return self.year_stat('BPSs')
@@ -388,16 +384,24 @@ class Stock(UserDict):
         return self.year_stat('DEPTs')
 
     @property
-    def FCF_stat(self):
-        return zip(self.year_stat('CFOs'), self.year_stat('CFIs'), self.year_stat('CFFs'), self.year_stat('FCFs'))
+    def CFOs(self):
+        return self.year_stat('CFOs')
+
+    @property
+    def CFIs(self):
+        return self.year_stat('CFIs')
+
+    @property
+    def CFFs(self):
+        return self.year_stat('CFFs')
+
+    @property
+    def FCFs(self):
+        return self.year_stat('FCFs')
 
     @property
     def FCF_surplus_years(self):
         return len([v for v in self.year_stat('FCFs', exclude_future=True) if v[1] > 0])
-
-    @property
-    def PCR_stat(self):
-        return zip(self.get('PCRs', []), self.get('PSRs', []))
 
     @property
     def is_five_years_record_low(self):
@@ -459,10 +463,6 @@ class Stock(UserDict):
             return 0
         last_year = [c[1] for c in self.current_ratio if c[0] == LAST_YEAR]
         return last_year[0] if last_year else 0
-
-    @property
-    def current_ratio_stat(self):
-        return zip(self.current_assets, self.current_liability, self.current_ratio, self.total_liability)
 
     @property
     def NCAV(self):
