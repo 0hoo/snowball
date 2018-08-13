@@ -221,6 +221,14 @@ $(document).ready(function(){
                             {% if order_by == 'rank_pbr' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
                         </th> 
                         <th>
+                            <a href="{{ url_for('stocks', status=status, alt=alt) }}?order_by=rank_last_year_pcr&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">PCR</a>
+                            {% if order_by == 'rank_last_year_pcr' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                        </th>     
+                        <th>
+                            <a href="{{ url_for('stocks', status=status, alt=alt) }}?order_by=rank_last_year_psr&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">PSR</a>
+                            {% if order_by == 'rank_last_year_psr' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                        </th>     
+                        <th>
                             <a href="{{ url_for('stocks', status=status, alt=alt) }}?order_by=rank_last_year_gpa&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">GPA</a>
                             {% if order_by == 'rank_last_year_gpa' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
                         </th>    
@@ -331,6 +339,8 @@ $(document).ready(function(){
                     {% elif alt == 'alt1' %}
                         <td>{{ stock.rank_per }}</td>
                         <td>{{ stock.rank_pbr }}</td>
+                        <td>{{ stock.rank_last_year_pcr }}</td>
+                        <td>{{ stock.rank_last_year_psr }}</td>
                         <td>{{ stock.rank_last_year_gpa }}</td>
                         <td>{{ stock.rank_dividend }}</td>
                         <td>{{ stock.rank_beta }}</td>
