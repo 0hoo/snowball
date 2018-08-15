@@ -442,6 +442,16 @@ function lineChart(elementId, label, labels, data, color) {
                     </td>
                     <td>{{ '%.2f'|format(stock.current_ratio_last_year) }}</td>
                 </tr>
+                {% if stock.last_year_pfr %}
+                <tr>
+                    <td>PFR (시총 / FCF)
+                        {% if stock.rank_last_year_pfr %}
+                        <div class="ui label">{{ stock.rank_last_year_pfr }}위</div>
+                        {% endif %}
+                    </td>
+                    <td>{{ '%.2f'|format(stock.last_year_pfr) }} ({{ stock.agg_value|int }} / {{ stock.last_year_fcf|int }})</td>
+                </tr>
+                {% endif %}
                 <tr>
                     <td>우선주</td>
                     <td>{% if stock.has_preferred_stock %}있음{% else %}없음{% endif %}</td>
