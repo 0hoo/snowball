@@ -841,13 +841,13 @@ function lineChart(elementId, label, labels, data, color) {
                         <th>매출</th>
                         <th>매출원가</th>
                         <th>원가율</th>
-                        <th>판관비율</th>
+                        <th>관비율</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for year, SGA_ratio in stock.SGA_ratio %}
                     <tr>
-                        <td>{{SGA_ratio|int}}</td>
+                        <td>{{year|int}}</td>
                         <td>{{stock.value_by_year('sales', year)|int}}</td>
                         <td>{{stock.value_by_year('sales_cost', year)|int}}</td>
                         <td>{{ '%.2f'|format(stock.value_by_year('sales_cost_ratio', year) or 0) }}</td>
