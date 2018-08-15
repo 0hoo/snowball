@@ -227,7 +227,11 @@ $(document).ready(function(){
                         <th>
                             <a href="{{ url_for('stocks', status=status, alt=alt) }}?order_by=rank_last_year_psr&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">PSR</a>
                             {% if order_by == 'rank_last_year_psr' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
-                        </th>     
+                        </th>
+                        <th>
+                            <a href="{{ url_for('stocks', status=status, alt=alt) }}?order_by=rank_last_year_pfr&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">PFR</a>
+                            {% if order_by == 'rank_last_year_pfr' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                        </th>
                         <th>
                             <a href="{{ url_for('stocks', status=status, alt=alt) }}?order_by=rank_last_year_gpa&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">GPA</a>
                             {% if order_by == 'rank_last_year_gpa' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
@@ -261,10 +265,6 @@ $(document).ready(function(){
                             {% if order_by == 'rank_foreigner_weight' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
                         </th>
                         <th>
-                            <a href="{{ url_for('stocks', status=status, alt=alt) }}?order_by=rank_floating_rate&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">유동성</a>
-                            {% if order_by == 'rank_floating_rate' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
-                        </th>
-                        <th>
                             <a href="{{ url_for('stocks', status=status, alt=alt) }}?order_by=rank_ncav&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">NCAV</a>
                             {% if order_by == 'rank_ncav' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}                            
                         </th>
@@ -278,6 +278,11 @@ $(document).ready(function(){
                         </th>
                         <th>
                             기대
+                        </th>
+                    {% elif alt == 'alt2' %}
+                        <th>
+                            <a href="{{ url_for('stocks', status=status, alt=alt) }}?order_by=rank_floating_rate&ordering={% if ordering == 'asc' %}desc{% else %}asc{% endif %}{% if current_filter %}&filter_id={{ current_filter._id }}{% endif %}">유동성</a>
+                            {% if order_by == 'rank_floating_rate' %}{% if ordering == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
                         </th>
                     {% endif %}
                     <th>
@@ -341,6 +346,7 @@ $(document).ready(function(){
                         <td>{{ stock.rank_pbr }}</td>
                         <td>{{ stock.rank_last_year_pcr }}</td>
                         <td>{{ stock.rank_last_year_psr }}</td>
+                        <td>{{ stock.rank_last_year_pfr }}</td>
                         <td>{{ stock.rank_last_year_gpa }}</td>
                         <td>{{ stock.rank_dividend }}</td>
                         <td>{{ stock.rank_beta }}</td>
@@ -349,7 +355,6 @@ $(document).ready(function(){
                         <td>{{ stock.rank_month6 }}</td>
                         <td>{{ stock.rank_month12 }}</td>
                         <td>{{ stock.rank_foreigner_weight }}</td>
-                        <td>{{ stock.rank_floating_rate }}</td>
                         <td>
                             {% if stock.NCAV_ratio != 0 %}
                             {{ '%.0f'|format(stock.NCAV_ratio) }}
@@ -360,6 +365,8 @@ $(document).ready(function(){
                         <td>{% if stock.mean_ROIC == 0 %}N/A{% else %}{{ '%0.f'|format(stock.mean_ROIC) }}{% endif %}</td>
                         <td>{{ '%.0f'|format(stock.current_ratio_last_year) }}</td>
                         <td>{% if stock.calculable %} {{ '%.1f'|format(stock.expected_rate or 0) }} {% endif %}</td>
+                    {% elif alt == 'alt2' %}
+                        <td>{{ stock.rank_floating_rate }}</td>
                     {% endif %}
                     <td>
                         {% if stock.owned %}

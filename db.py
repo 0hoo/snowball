@@ -557,6 +557,18 @@ class Stock(UserDict):
         values = [v[1] for v in self.get('ROICs', []) if v[1] > 0]
         return mean(values) if values else 0
 
+    @property
+    def last_year_fcf(self):
+        fcf = [fcf[1] for fcf in self.FCFs if fcf[0] == LAST_YEAR]
+        return fcf[0] if fcf else 0
+
+    @property
+    def last_year_pfr(self):
+        fcf = self.last_year_fcf
+        if not fcf:
+            return 0
+        return self.get('agg_value', 1) / fcf
+
     def value_by_year(self, key, year):
         return first_or_none([v[1]for v in attr_or_key_getter(key, self, []) if v[0] == year])
 
@@ -671,25 +683,25 @@ def update_rank_by(stocks: List[Stock], key: str, rank_key: str, reverse: bool):
 
 def update_ranks():
     stocks = [Stock(s) for s in db.stocks.find()]
-    # update_rank_by(stocks, 'last_year_gpa', 'rank_last_year_gpa', reverse=True)
-    # update_rank_by(stocks, 'agg_value', 'agg_rank', reverse=True)
-    # update_rank_by(stocks, 'pbr', 'rank_pbr', reverse=False)
-    # update_rank_by(stocks, 'per', 'rank_per', reverse=False)
-    # update_rank_by(stocks, 'dividend_rate', 'rank_dividend', reverse=True)
-    # update_rank_by(stocks, 'beta', 'rank_beta', reverse=False)
-    # update_rank_by(stocks, 'floating_rate', 'rank_floating_rate', reverse=True)
-    # update_rank_by(stocks, 'foreigner_weight', 'rank_foreigner_weight', reverse=True)
-    # update_rank_by(stocks, 'month1', 'rank_month1', reverse=True)
-    # update_rank_by(stocks, 'month3', 'rank_month3', reverse=True)
-    # update_rank_by(stocks, 'month6', 'rank_month3', reverse=True)
-    # update_rank_by(stocks, 'month12', 'rank_month3', reverse=True)
-    # update_rank_by(stocks, 'relative_earning_rate', 'rank_relative_earning_rate', reverse=True)
-    # update_rank_by(stocks, 'NCAV_ratio', 'rank_ncav', reverse=True)
-    # update_rank_by(stocks, 'mean_ROIC', 'rank_roic', reverse=True)
-    # update_rank_by(stocks, 'current_ratio_last_year', 'rank_current_ratio', reverse=True)
+    update_rank_by(stocks, 'last_year_gpa', 'rank_last_year_gpa', reverse=True)
+    update_rank_by(stocks, 'agg_value', 'agg_rank', reverse=True)
+    update_rank_by(stocks, 'pbr', 'rank_pbr', reverse=False)
+    update_rank_by(stocks, 'per', 'rank_per', reverse=False)
+    update_rank_by(stocks, 'dividend_rate', 'rank_dividend', reverse=True)
+    update_rank_by(stocks, 'beta', 'rank_beta', reverse=False)
+    update_rank_by(stocks, 'floating_rate', 'rank_floating_rate', reverse=True)
+    update_rank_by(stocks, 'foreigner_weight', 'rank_foreigner_weight', reverse=True)
+    update_rank_by(stocks, 'month1', 'rank_month1', reverse=True)
+    update_rank_by(stocks, 'month3', 'rank_month3', reverse=True)
+    update_rank_by(stocks, 'month6', 'rank_month3', reverse=True)
+    update_rank_by(stocks, 'month12', 'rank_month3', reverse=True)
+    update_rank_by(stocks, 'relative_earning_rate', 'rank_relative_earning_rate', reverse=True)
+    update_rank_by(stocks, 'NCAV_ratio', 'rank_ncav', reverse=True)
+    update_rank_by(stocks, 'mean_ROIC', 'rank_roic', reverse=True)
+    update_rank_by(stocks, 'current_ratio_last_year', 'rank_current_ratio', reverse=True)
     update_rank_by(stocks, 'last_year_pcr', 'rank_last_year_pcr', reverse=False)
-    # update_rank_by(stocks, 'last_year_psr', 'rank_last_year_psr', reverse=False)
-
+    update_rank_by(stocks, 'last_year_psr', 'rank_last_year_psr', reverse=False)
+    update_rank_by(stocks, 'last_year_pfr', 'rank_last_year_pfr', reverse=False)
 
 def all_stocks(order_by='title', ordering='asc', find=None, filter_by_expected_rate=True, filter_bad=True, filter_options=[], rank_options=[]) -> List[Stock]:
     stocks = [Stock(dict) for dict in (db.stocks.find(find) if find else db.stocks.find())]
