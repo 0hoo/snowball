@@ -654,11 +654,11 @@ def make_filter_option_func(filter_option):
 
 
 def update_rank_by(stocks: List[Stock], key: str, rank_key: str, reverse: bool):
-    countable = [s for s in stocks if attr_or_key_getter(key, s, default_value=None)]
+    countable = [s for s in stocks if attr_or_key_getter(key, s, default_value=None) and attr_or_key_getter(key, s, default_value=None) > 0]
     for idx, stock in enumerate(sorted(countable, key=partial(attr_or_key_getter, key), reverse=reverse)):
         stock[rank_key] = idx + 1
         save_stock(stock)
-    uncountable = [s for s in stocks if not attr_or_key_getter(key, s, default_value=None)]
+    uncountable = [s for s in stocks if not attr_or_key_getter(key, s, default_value=None) or attr_or_key_getter(key, s, default_value=None) < 0]
     for stock in uncountable:
         stock[rank_key] = len(stocks)
         save_stock(stock)
@@ -666,24 +666,24 @@ def update_rank_by(stocks: List[Stock], key: str, rank_key: str, reverse: bool):
 
 def update_ranks():
     stocks = [Stock(s) for s in db.stocks.find()]
-    update_rank_by(stocks, 'last_year_gpa', 'rank_last_year_gpa', reverse=True)
-    update_rank_by(stocks, 'agg_value', 'agg_rank', reverse=True)
-    update_rank_by(stocks, 'pbr', 'rank_pbr', reverse=False)
-    update_rank_by(stocks, 'per', 'rank_per', reverse=False)
-    update_rank_by(stocks, 'dividend_rate', 'rank_dividend', reverse=True)
-    update_rank_by(stocks, 'beta', 'rank_beta', reverse=False)
-    update_rank_by(stocks, 'floating_rate', 'rank_floating_rate', reverse=True)
-    update_rank_by(stocks, 'foreigner_weight', 'rank_foreigner_weight', reverse=True)
-    update_rank_by(stocks, 'month1', 'rank_month1', reverse=True)
-    update_rank_by(stocks, 'month3', 'rank_month3', reverse=True)
-    update_rank_by(stocks, 'month6', 'rank_month3', reverse=True)
-    update_rank_by(stocks, 'month12', 'rank_month3', reverse=True)
-    update_rank_by(stocks, 'relative_earning_rate', 'rank_relative_earning_rate', reverse=True)
-    update_rank_by(stocks, 'NCAV_ratio', 'rank_ncav', reverse=True)
-    update_rank_by(stocks, 'mean_ROIC', 'rank_roic', reverse=True)
-    update_rank_by(stocks, 'current_ratio_last_year', 'rank_current_ratio', reverse=True)
+    # update_rank_by(stocks, 'last_year_gpa', 'rank_last_year_gpa', reverse=True)
+    # update_rank_by(stocks, 'agg_value', 'agg_rank', reverse=True)
+    # update_rank_by(stocks, 'pbr', 'rank_pbr', reverse=False)
+    # update_rank_by(stocks, 'per', 'rank_per', reverse=False)
+    # update_rank_by(stocks, 'dividend_rate', 'rank_dividend', reverse=True)
+    # update_rank_by(stocks, 'beta', 'rank_beta', reverse=False)
+    # update_rank_by(stocks, 'floating_rate', 'rank_floating_rate', reverse=True)
+    # update_rank_by(stocks, 'foreigner_weight', 'rank_foreigner_weight', reverse=True)
+    # update_rank_by(stocks, 'month1', 'rank_month1', reverse=True)
+    # update_rank_by(stocks, 'month3', 'rank_month3', reverse=True)
+    # update_rank_by(stocks, 'month6', 'rank_month3', reverse=True)
+    # update_rank_by(stocks, 'month12', 'rank_month3', reverse=True)
+    # update_rank_by(stocks, 'relative_earning_rate', 'rank_relative_earning_rate', reverse=True)
+    # update_rank_by(stocks, 'NCAV_ratio', 'rank_ncav', reverse=True)
+    # update_rank_by(stocks, 'mean_ROIC', 'rank_roic', reverse=True)
+    # update_rank_by(stocks, 'current_ratio_last_year', 'rank_current_ratio', reverse=True)
     update_rank_by(stocks, 'last_year_pcr', 'rank_last_year_pcr', reverse=False)
-    update_rank_by(stocks, 'last_year_psr', 'rank_last_year_psr', reverse=False)
+    # update_rank_by(stocks, 'last_year_psr', 'rank_last_year_psr', reverse=False)
 
 
 def all_stocks(order_by='title', ordering='asc', find=None, filter_by_expected_rate=True, filter_bad=True, filter_options=[], rank_options=[]) -> List[Stock]:

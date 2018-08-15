@@ -12,7 +12,7 @@ from etftag import ETFTag
 app = Flask(__name__)
 
 
-VERSION = 1.09
+VERSION = 1.10
 INTEREST = 2.25
 
 
