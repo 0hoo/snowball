@@ -62,6 +62,8 @@ function lineChart(elementId, label, labels, data, color) {
         {% if stock.rank_pbr %}<div class="ui label">PBR: {{ stock.rank_pbr }}위</div>{% endif %}
         {% if stock.rank_per %}<div class="ui label">PER: {{ stock.rank_per }}위</div>{% endif %}
         {% if stock.rank_last_year_gpa %}<div class="ui label">GPA: {{ stock.rank_last_year_gpa }}위</div>{% endif %}
+        {% if stock.rank_last_year_pcr %}<div class="ui label">PCR: {{ stock.rank_last_year_pcr }}위 ({{ '%.2f'|format(stock.last_year_pcr) }})</div>{% endif %}
+        {% if stock.rank_last_year_psr %}<div class="ui label">PSR: {{ stock.rank_last_year_psr }}위 ({{ '%.2f'|format(stock.last_year_psr) }})</div>{% endif %}
         {% if stock.agg_rank %}<div class="ui label">시총: {{ stock.agg_rank }}위</div>{% endif %}
       </div>
   </div>
