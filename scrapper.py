@@ -17,7 +17,7 @@ from db import Quarter
 from utils import parse_float, parse_int, first_or_none, float_or_none
 
 
-DAUM_BASIC = 'http://finance.daum.net/item/main.daum?code='
+DAUM_BASIC = 'http://finance-service.daum.net/item/main.daum?code='
 NAVER_COMPANY = 'http://companyinfo.stock.naver.com/v1/company/c1010001.aspx?cmp_cd='
 NAVER_YEARLY = "http://companyinfo.stock.naver.com/v1/company/ajax/cF1001.aspx?cmp_cd=%s&fin_typ=0&freq_typ=Y"
 NAVER_QUARTERLY = "http://companyinfo.stock.naver.com/v1/company/ajax/cF1001.aspx?cmp_cd=%s&fin_typ=0&freq_typ=Q"
