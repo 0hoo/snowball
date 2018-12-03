@@ -429,7 +429,8 @@ def parse_fnguide(code: str):
 
     beta = parse_float(first_or_none(tree.xpath('//*[@id="svdMainGrid1"]/table/tbody/tr[4]/td[2]/text()')))
 
-    stocks = first_or_none(tree.xpath('//*[@id="svdMainGrid1"]/table/tbody/tr[5]/td[1]/text()'))
+    stocks = first_or_none(tree.xpath('//*[@id="svdMainGrid1"]/table/tbody/tr[7]/td[1]/text()'))
+    print(stocks)
     stocks = stocks.split('/ ')
     has_preferred_stock = False if stocks[1] == '0' else True
     
