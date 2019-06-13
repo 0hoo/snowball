@@ -8,6 +8,8 @@ import db
 from scrapper import parse_snowball
 from utils import mean_or_zero
 from etftag import ETFTag
+import os
+from flask import send_from_directory
 
 app = Flask(__name__)
 
@@ -15,7 +17,10 @@ app = Flask(__name__)
 VERSION = 1.10
 INTEREST = 2.25
 
-
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path, 'static'),
+                          'favicon.ico',mimetype='image/vnd.microsoft.icon')
 @app.route('/stocks')
 @app.route('/stocks/<status>')
 @app.route('/stocks/<status>/<alt>')
