@@ -27,6 +27,7 @@ NAVER = 'https://finance.naver.com/item/main.nhn?code='
 FNGUIDE = 'http://comp.fnguide.com/SVO2/ASP/SVD_main.asp?pGB=1&gicode=A'
 FNGUIDE_FINANCIAL_STMT = 'http://comp.fnguide.com/SVO2/ASP/SVD_Finance.asp?pGB=1&gicode=A%s&cID=&MenuYn=Y&ReportGB=&NewMenuID=103'
 FNGUIDE_FINANCIAL_RATIO = 'http://comp.fnguide.com/SVO2/ASP/SVD_FinanceRatio.asp?pGB=1&gicode=A%s&cID=&MenuYn=Y&ReportGB=&NewMenuID=104'
+FNGUIDE_INVEST_GUIDE = 'http://comp.fnguide.com/SVO2/asp/SVD_Invest.asp?pGB=1&gicode=A%s&cID=&MenuYn=Y&ReportGB=&NewMenuID=105&stkGb=701'
 
 LAST_YEAR = str(datetime.now().year - 1)
 
@@ -194,101 +195,104 @@ def parse_snowball(code: str):
     if parse_fnguide(code):
         parse_fnguide_financial_statements(code)
         parse_fnguide_financial_ratio(code)
+        parse_fnguide_invest_guide(code)
     else:
         print('FnGuide 수집실패')
         if not parse_naver_company(code):
             return
     
-    print('종목 {} 스노우볼...'.format(code))
-    url = NAVER_YEARLY % (code)
-    tree = tree_from_url(url)
-
-    try:
-        years = list(filter(lambda x: x != '', map(lambda x: x.strip().split('/')[0], tree.xpath('/html/body/table/thead/tr[2]/th/text()'))))
-        last_year_index = years.index(LAST_YEAR)
-    except ValueError:
-        return
-
-    tds = tree.xpath('/html/body/table/tbody/tr[22]/td')
+    # print('종목 {} 스노우볼...'.format(code))
     
-    ROEs = [first_or_none(td.xpath('span/text()')) for td in tds]
-    while ROEs and ROEs[-1] is None:
-        ROEs.pop()
+    # url = NAVER_YEARLY % (code)
+    # print(url)
+    # tree = tree_from_url(url)
+
+    # try:
+    #     years = list(filter(lambda x: x != '', map(lambda x: x.strip().split('/')[0], tree.xpath('/html/body/table/thead/tr[2]/th/text()'))))
+    #     last_year_index = years.index(LAST_YEAR)
+    # except ValueError:
+    #     return
+
+    # tds = tree.xpath('/html/body/table/tbody/tr[22]/td')
     
-    if len(ROEs) == 0:
-        print('*** ROE 정보가 없음 >>>')
-        return
+    # ROEs = [first_or_none(td.xpath('span/text()')) for td in tds]
+    # while ROEs and ROEs[-1] is None:
+    #     ROEs.pop()
     
-    ROEs = [float_or_none(x) for x in ROEs]
-
-    DEPTs = tree.xpath('/html/body/table/tbody/tr[24]/td/span/text()')
-    DEPTs = [parse_float(x) for x in DEPTs]
-
-    EPSs = tree.xpath('/html/body/table/tbody/tr[26]/td/span/text()')
-    EPSs = [parse_float(x) for x in EPSs]
-
-    PERs = tree.xpath('/html/body/table/tbody/tr[27]/td/span/text()')
-    PERs = [parse_float(x) for x in PERs]
-
-    BPSs = tree.xpath('/html/body/table/tbody/tr[28]/td/span/text()')
-    BPSs = [parse_int(x) for x in BPSs]
-
-    PBRs = tree.xpath('/html/body/table/tbody/tr[29]/td/span/text()')
-    PBRs = [parse_float(x) for x in PBRs]
-
-    #자산총계
-    TAs = tree.xpath('/html/body/table/tbody/tr[8]/td/span/text()')
-    TAs = [parse_int(x) for x in TAs]
-
-    #당기순이익
-    NPs = tree.xpath('/html/body/table/tbody/tr[5]/td/span/text()')
-    NPs = [parse_int(x) for x in NPs]
-
-    #영업활동현금흐름
-    CFOs = tree.xpath('/html/body/table/tbody/tr[14]/td/span/text()')
-    CFOs = [parse_int(x) for x in CFOs]
-
-    #투자활동현금흐름
-    CFIs = tree.xpath('/html/body/table/tbody/tr[15]/td/span/text()')
-    CFIs = [parse_int(x) for x in CFIs]
-
-    #투자활동현금흐름
-    CFFs = tree.xpath('/html/body/table/tbody/tr[16]/td/span/text()')
-    CFFs = [parse_int(x) for x in CFFs]
-
-    CAPEXs = tree.xpath('/html/body/table/tbody/tr[17]/td/span/text()')
-    CAPEXs = [parse_float(x) for x in CAPEXs]
-
-    #잉여현금흐름
-    FCFs = tree.xpath('/html/body/table/tbody/tr[18]/td/span/text()')
-    FCFs = [parse_int(x) for x in FCFs]
+    # if len(ROEs) == 0:
+    #     print('*** ROE 정보가 없음 >>>')
+    #     return
     
-    #발행주식수
-    TIs = tree.xpath('/html/body/table/tbody/tr[33]/td/span/text()')
-    TIs = [parse_int(x) for x in TIs]
+    # ROEs = [float_or_none(x) for x in ROEs]
 
-    stock = {
-        'code': code,
-        'ROEs': ROEs,
-        'last_year_index': last_year_index,
-        'PBRs': PBRs,
-        'EPSs': EPSs,
-        'TAs': TAs,
-        'NPs': NPs,
-        'CFOs': CFOs,
-        'CFIs': CFIs,
-        'CFFs': CFFs,
-        'FCFs': FCFs,
-        'PERs': PERs,
-        'TIs': TIs,
-        'DEPTs': DEPTs,
-        'BPSs': BPSs,
-        'CAPEXs': CAPEXs,
-    }
-    stock = db.save_stock(stock)
+    # DEPTs = tree.xpath('/html/body/table/tbody/tr[24]/td/span/text()')
+    # DEPTs = [parse_float(x) for x in DEPTs]
 
-    parse_quarterly(code)
-    parse_json(code)
+    # EPSs = tree.xpath('/html/body/table/tbody/tr[26]/td/span/text()')
+    # EPSs = [parse_float(x) for x in EPSs]
+
+    # PERs = tree.xpath('/html/body/table/tbody/tr[27]/td/span/text()')
+    # PERs = [parse_float(x) for x in PERs]
+
+    # BPSs = tree.xpath('/html/body/table/tbody/tr[28]/td/span/text()')
+    # BPSs = [parse_int(x) for x in BPSs]
+
+    # PBRs = tree.xpath('/html/body/table/tbody/tr[29]/td/span/text()')
+    # PBRs = [parse_float(x) for x in PBRs]
+
+    # #자산총계
+    # TAs = tree.xpath('/html/body/table/tbody/tr[8]/td/span/text()')
+    # TAs = [parse_int(x) for x in TAs]
+
+    # #당기순이익
+    # NPs = tree.xpath('/html/body/table/tbody/tr[5]/td/span/text()')
+    # NPs = [parse_int(x) for x in NPs]
+
+    # #영업활동현금흐름
+    # CFOs = tree.xpath('/html/body/table/tbody/tr[14]/td/span/text()')
+    # CFOs = [parse_int(x) for x in CFOs]
+
+    # #투자활동현금흐름
+    # CFIs = tree.xpath('/html/body/table/tbody/tr[15]/td/span/text()')
+    # CFIs = [parse_int(x) for x in CFIs]
+
+    # #투자활동현금흐름
+    # CFFs = tree.xpath('/html/body/table/tbody/tr[16]/td/span/text()')
+    # CFFs = [parse_int(x) for x in CFFs]
+
+    # CAPEXs = tree.xpath('/html/body/table/tbody/tr[17]/td/span/text()')
+    # CAPEXs = [parse_float(x) for x in CAPEXs]
+
+    # #잉여현금흐름
+    # FCFs = tree.xpath('/html/body/table/tbody/tr[18]/td/span/text()')
+    # FCFs = [parse_int(x) for x in FCFs]
+    
+    # #발행주식수
+    # TIs = tree.xpath('/html/body/table/tbody/tr[33]/td/span/text()')
+    # TIs = [parse_int(x) for x in TIs]
+
+    # stock = {
+    #     'code': code,
+    #     'ROEs': ROEs,
+    #     'last_year_index': last_year_index,
+    #     'PBRs': PBRs,
+    #     'EPSs': EPSs,
+    #     'TAs': TAs,
+    #     'NPs': NPs,
+    #     'CFOs': CFOs,
+    #     'CFIs': CFIs,
+    #     'CFFs': CFFs,
+    #     'FCFs': FCFs,
+    #     'PERs': PERs,
+    #     'TIs': TIs,
+    #     'DEPTs': DEPTs,
+    #     'BPSs': BPSs,
+    #     'CAPEXs': CAPEXs,
+    # }
+    # stock = db.save_stock(stock)
+
+    #parse_quarterly(code)
+    #parse_json(code)
 
 
 def parse_json(code: str):
@@ -346,7 +350,10 @@ def parse_etf(code: str, tag: str, etf_type: str):
     print(url)
     tree = tree_from_url(url, 'euc-kr')
 
-    title = tree.xpath('//*[@id="middle"]/div[1]/div[1]/h2/a')[0].text
+    try:
+        title = tree.xpath('//*[@id="middle"]/div[1]/div[1]/h2/a')[0].text
+    except:
+        return
     month1 = parse_float(tree.xpath('//*[@id="tab_con1"]/div[5]/table/tbody/tr[1]/td/em')[0].text.strip())
     month3 = parse_float(tree.xpath('//*[@id="tab_con1"]/div[5]/table/tbody/tr[2]/td/em')[0].text.strip())
     month6 = parse_float(tree.xpath('//*[@id="tab_con1"]/div[5]/table/tbody/tr[3]/td/em')[0].text.strip())
@@ -430,7 +437,7 @@ def parse_fnguide(code: str):
     beta = parse_float(first_or_none(tree.xpath('//*[@id="svdMainGrid1"]/table/tbody/tr[4]/td[2]/text()')))
 
     stocks = first_or_none(tree.xpath('//*[@id="svdMainGrid1"]/table/tbody/tr[7]/td[1]/text()'))
-    print(stocks)
+
     stocks = stocks.split('/ ')
     has_preferred_stock = False if stocks[1] == '0' else True
     
@@ -443,6 +450,41 @@ def parse_fnguide(code: str):
     consensus_count = parse_int(first_or_none(tree.xpath('//*[@id="svdMainGrid9"]/table/tbody/tr/td[5]/text()')))
 
     bps = parse_int(first_or_none(tree.xpath('//*[@id="highlight_D_A"]/table/tbody/tr[19]/td[3]/text()')))
+
+    try:
+        years = tree.xpath('//*[@id="highlight_D_Y"]/table/thead/tr[2]/th/div/text()')
+        years = [x.split('/')[0] for x in years]
+        last_year_index = years.index(LAST_YEAR)
+    except ValueError:
+        print("** 작년 데이터 없음 **")
+        return
+
+    NPs = tree.xpath('//*[@id="highlight_D_Y"]/table/tbody/tr[3]/td/text()')
+    NPs = [parse_float(x) for x in NPs]
+
+    TAs = tree.xpath('//*[@id="highlight_D_Y"]/table/tbody/tr[6]/td/text()')
+    TAs = [parse_float(x) for x in TAs]
+
+    ROEs = tree.xpath('//*[@id="highlight_D_Y"]/table/tbody/tr[17]/td/text()')
+    ROEs = [parse_float(x) for x in ROEs]
+
+    EPSs = tree.xpath('//*[@id="highlight_D_Y"]/table/tbody/tr[18]/td/text()')
+    EPSs = [parse_float(x) for x in EPSs]
+
+    BPSs = tree.xpath('//*[@id="highlight_D_Y"]/table/tbody/tr[19]/td/text()')
+    BPSs = [parse_float(x) for x in BPSs]
+
+    DPSs = tree.xpath('//*[@id="highlight_D_Y"]/table/tbody/tr[20]/td/text()')
+    DPSs = [parse_float(x) for x in DPSs]
+
+    PERs = tree.xpath('//*[@id="highlight_D_Y"]/table/tbody/tr[21]/td/text()')
+    PERs = [parse_float(x) for x in PERs]
+
+    PBRs = tree.xpath('//*[@id="highlight_D_Y"]/table/tbody/tr[22]/td/text()')
+    PBRs = [parse_float(x) for x in PBRs]
+
+    DEPTs = tree.xpath('//*[@id="highlight_D_Y"]/table/tbody/tr[7]/td/text()')
+    DEPTs = [parse_float(x) for x in DEPTs]
 
     stock = {
         'code': code,
@@ -467,6 +509,16 @@ def parse_fnguide(code: str):
         'consensus_count': consensus_count,
         'bps': bps,
         'use_fnguide': True,
+        'last_year_index': last_year_index,
+        'NPs': NPs,
+        'TAs': TAs,
+        'ROEs': ROEs,
+        'EPSs': EPSs,
+        'BPSs': BPSs,
+        'DPSs': DPSs,
+        'PERs': PERs,
+        'PBRs': PBRs,
+        'DEPTs': DEPTs,
     }
     db.save_stock(stock)
     return True
@@ -479,6 +531,13 @@ def row_values_table(table, row_headers: List[str], key: str) -> List[str]:
     except ValueError:
         return []
 
+def row_values_table_by_index(table, index: int) -> List[str]:
+    try:
+        return [parse_float(v) for v in table.xpath('tbody/tr')[index].xpath('td//text()')]
+    except ValueError:
+        return []
+    except IndexError:
+        return []
 
 def parse_fnguide_financial_table(tree) -> dict:
     if not tree.xpath('//*[@id="divDaechaY"]'):
@@ -526,6 +585,8 @@ def parse_fnguide_profit_table(tree) -> dict:
 
     row_values = partial(row_values_table, tree.xpath("//*[@id='divSonikY']/table")[0], row_headers)
     sales = row_values('매출액')[:len(years)]
+    GPs = row_values('매출총이익')[:len(years)]
+    GPs = list(zip(years, GPs))
     sales_cost = row_values('매출원가')[:len(years)]
     SGAs = row_values('판매비와관리비')[:len(years)]
 
@@ -541,8 +602,29 @@ def parse_fnguide_profit_table(tree) -> dict:
         'sales': sales,
         'sales_cost': sales_cost,
         'SGAs': SGAs,
+        'GPs': GPs,
     }
 
+def parse_fnguide_profit_flow(tree) -> dict:
+    if not tree.xpath('//*[@id="divCashY"]'):
+        return {}
+    years = tree.xpath('//*[@id="divCashY"]/table/thead/tr/th/text()')
+    years = [int(y.split('/')[0]) for y in years if len(y.split('/')) > 1]
+
+    row_headers = tree.xpath("//*[@id='divCashY']/table/tbody/tr/th//text()")
+    row_headers = [h.strip() for h in row_headers if h.strip()]
+    row_headers = [h.replace('\xa0', '') for h in row_headers if h != '계산에 참여한 계정 펼치기']
+
+    row_values = partial(row_values_table, tree.xpath("//*[@id='divCashY']/table")[0], row_headers)
+    CFOs = list(zip(years, row_values('영업활동으로인한현금흐름')[:len(years)]))
+    CFIs = list(zip(years, row_values('투자활동으로인한현금흐름')[:len(years)]))
+    CFFs = list(zip(years, row_values('재무활동으로인한현금흐름')[:len(years)]))
+
+    return {
+        'CFOs': CFOs,
+        'CFIs': CFIs,
+        'CFFs': CFFs,
+    }
 
 def parse_fnguide_financial_statements(code: str) -> bool:
     print('종목 {} FnGuide 재무재표 ...'.format(code))
@@ -550,7 +632,7 @@ def parse_fnguide_financial_statements(code: str) -> bool:
     print('FnGuide 재무재표 {}'.format(url))
     tree = tree_from_url(url)
     
-    stock = {'code': code, **parse_fnguide_financial_table(tree), **parse_fnguide_profit_table(tree)}
+    stock = {'code': code, **parse_fnguide_financial_table(tree), **parse_fnguide_profit_table(tree), **parse_fnguide_profit_flow(tree)}
     db.save_stock(stock)
     
     return True
@@ -600,6 +682,29 @@ def parse_fnguide_financial_ratio(code: str) -> bool:
         'total_asset_turnover': total_asset_turnover,
         'net_working_capital_turnover': net_working_capital_turnover,
         'net_working_capital': net_working_capital,
+    }
+    db.save_stock(stock)
+
+    return True
+
+def parse_fnguide_invest_guide(code: str) -> bool:
+    print('종목 {} FnGuide 투자지표 ...'.format(code))
+    url = FNGUIDE_INVEST_GUIDE % (code)
+    print('FnGuide 투자지표 {}'.format(url))
+    tree = tree_from_url(url)
+
+    if not tree.xpath('//*[@id="compBody"]/div[2]/div[5]/div[2]/table'):
+        return False
+
+    years = tree.xpath('//*[@id="compBody"]/div[2]/div[5]/div[2]/table/thead/tr/th/text()')
+    years = [int(y.split('/')[0]) for y in years if len(y.split('/')) > 1]
+
+    row_values = partial(row_values_table_by_index, tree.xpath('//*[@id="compBody"]/div[2]/div[5]/div[2]/table')[0])
+    FCFs = list(zip(years, row_values(50)))
+    
+    stock = {
+        'code': code,
+        'FCFs': FCFs,
     }
     db.save_stock(stock)
 
