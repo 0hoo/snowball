@@ -7,7 +7,7 @@ from types import FunctionType
 from datetime import datetime
 from functools import partial
 from itertools import repeat
-from statistics import mean
+from statistics import mean, StatisticsError
 from collections import UserDict, namedtuple
 
 from pymongo import MongoClient, ASCENDING, DESCENDING
@@ -385,19 +385,27 @@ class Stock(UserDict):
 
     @property
     def CFOs(self):
-        return self.year_stat('CFOs')
+        if self.get('CFOs') and type(self.get('CFOs')[0]) is int:
+            return self.year_stat('CFOs')
+        return self.get('CFOs', [(0, 0)])
 
     @property
     def CFIs(self):
-        return self.year_stat('CFIs')
+        if self.get('CFIs') and type(self.get('CFIs')[0]) is int:
+            return self.year_stat('CFIs')
+        return self.get('CFIs', [(0, 0)])
 
     @property
     def CFFs(self):
-        return self.year_stat('CFFs')
+        if self.get('CFFs') and type(self.get('CFFs')[0]) is int:
+            return self.year_stat('CFFs')
+        return self.get('CFFs', [(0, 0)])
 
     @property
     def FCFs(self):
-        return self.year_stat('FCFs')
+        if self.get('FCFs') and type(self.get('FCFs')[0]) is int:
+            return self.year_stat('FCFs')
+        return self.get('FCFs', [(0, 0)])
 
     @property
     def FCF_surplus_years(self):
@@ -417,7 +425,10 @@ class Stock(UserDict):
 
     @property
     def mean_consensus_roe(self):
-        return mean([pair[1] for pair in self.consensus_roes if pair[1]])
+        try:
+            return mean([pair[1] for pair in self.consensus_roes if pair[1]])
+        except StatisticsError:
+            return 0
 
     @property
     def is_positive_consensus_roe(self):
@@ -634,10 +645,13 @@ class Stock(UserDict):
         year_profit = [p[1] for p in NPs if p[0] == year]
         if len(year_profit) > 0 and year_profit[0] > 0:
             profitable = 1
-        CFOs = self.year_stat('CFOs')
-        year_cfo = [c[1] for c in CFOs if c[0] == year]
-        if len(year_cfo) > 0 and year_cfo[0] > 0:
-            cfo = 1
+        CFOs = self.CFOs
+        if len(CFOs) > 0:
+            if type(CFOs[0]) is int:
+                CFOs = self.year_stat('CFOs')
+            year_cfo = [c[1] for c in CFOs if c[0] == year]
+            if len(year_cfo) > 0 and year_cfo[0] > 0:
+                cfo = 1
         
         return FScore(total_issued_stock=total_issued_stock, profitable=profitable, cfo=cfo)
 
